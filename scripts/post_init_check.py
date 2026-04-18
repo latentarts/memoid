@@ -15,6 +15,7 @@ REQUIRED_DIRS = [
     ROOT / "raw" / "inbox",
     ROOT / "wiki",
     ROOT / "evidence" / "sessions",
+    ROOT / "evidence" / "decisions",
     ROOT / "evidence" / "source-notes",
     ROOT / "evidence" / "audits",
     ROOT / "skills" / "download-urls" / "scripts",
@@ -38,10 +39,13 @@ def fail(message: str) -> int:
     return 1
 
 
+def ensure_directories() -> None:
+    for path in REQUIRED_DIRS:
+        path.mkdir(parents=True, exist_ok=True)
+
+
 def main() -> int:
-    missing_dirs = [str(path.relative_to(ROOT)) for path in REQUIRED_DIRS if not path.exists()]
-    if missing_dirs:
-        return fail("missing required directories:\n- " + "\n- ".join(missing_dirs))
+    ensure_directories()
 
     missing_files = [str(path.relative_to(ROOT)) for path in CHECK_FILES if not path.exists()]
     if missing_files:
@@ -63,7 +67,7 @@ def main() -> int:
     except Exception as exc:  # noqa: BLE001
         return fail(f"download_urls.py failed syntax check: {exc}")
 
-    print("post-init check passed")
+    print("Memo post-init check passed; runtime directories are ready")
     return 0
 
 

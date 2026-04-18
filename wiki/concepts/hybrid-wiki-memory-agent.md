@@ -1,4 +1,4 @@
-# Hybrid Wiki Memory Agent
+# Memo Architecture
 
 ## Summary
 
@@ -28,4 +28,3 @@ A markdown-first architecture that uses the Karpathy wiki pattern as the main kn
 ## Sources
 
 - `SPEC.md`
-

@@ -1,11 +1,11 @@
 ---
 name: init
-description: Initialize this repository for first use by syncing the local uv environment and running the post-init checks. Use when the user says init, initialize it, initialize the repo, or set up the repo.
+description: Initialize Memo for first use by syncing the local uv environment and running the post-init checks. Use when the user says init, initialize it, initialize the repo, or set up the repo.
 ---
 
 # Init
 
-Use this skill to prepare the repository for first use.
+Use this skill to prepare Memo for first use.
 
 ## Read First
 
@@ -25,6 +25,7 @@ uv run python scripts/post_init_check.py
 Report:
 
 - whether `uv sync` succeeded
+- whether runtime directories were created
 - whether the verification checks passed
 - what, if anything, still needs manual attention
 
@@ -33,4 +34,3 @@ Report:
 - Treat `init` and `initialize it` as direct triggers for this workflow.
 - Stop and report clearly if dependency installation fails.
 - Do not ingest sources as part of init.
-

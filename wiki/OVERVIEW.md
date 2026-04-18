@@ -1,6 +1,6 @@
 # Overview
 
-This repository implements a hybrid memory pattern for AI agents.
+Memo implements a hybrid memory pattern for AI agents.
 
 ## Summary
 
@@ -19,4 +19,3 @@ Pure RAG repeatedly rediscovers knowledge from raw sources.
 Pure wiki maintenance can drift away from evidence.
 
 This system aims to keep the advantages of a maintained wiki while adding stronger retrieval and filing discipline.
-

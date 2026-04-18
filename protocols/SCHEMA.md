@@ -47,7 +47,7 @@ Examples:
 
 - `wiki/entities/andrej-karpathy.md`
 - `wiki/concepts/retrieval-discipline.md`
-- `evidence/decisions/2026-04-21-hybrid-architecture.md`
+- `evidence/decisions/2026-04-21-example-decision.md`
 
 ## Section Conventions
 
@@ -98,4 +98,3 @@ Examples:
 - Prefer updating existing canonical pages over creating duplicates.
 - When facts change, move old facts into `History` instead of deleting them silently.
 - When a question produces durable synthesis, file it back into the wiki.
-

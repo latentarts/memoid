@@ -1,10 +1,37 @@
-# Hybrid Wiki Memory Agent
+# Memo
 
-This repository is a markdown-first memory system for AI agents.
+Memo is a markdown-first memory system for AI agents.
 
 It is designed for a simple problem: most LLM workflows either keep too little memory or rely on retrieval from raw documents every time. This repo takes a different approach. It maintains a persistent wiki that compounds over time, but adds enough operational discipline that the wiki stays useful as an agent memory layer instead of turning into an ungrounded pile of summaries.
 
-The architecture is defined in [SPEC.md](./SPEC.md). This README is the user guide.
+The architecture is defined in [SPEC.md](./SPEC.md). This README is the user guide for Memo.
+
+## Installation & Upgrades
+
+Memo uses a "managed engine" model. You keep one central engine repository and create separate knowledge-base workspaces for different projects.
+
+### One-Line Install (Linux/macOS)
+To create a new workspace or update an existing one:
+```bash
+curl -sSL https://raw.githubusercontent.com/prods/memoid/main/scripts/install.sh | bash -s my-workspace
+```
+
+### One-Line Install (Windows PowerShell)
+```powershell
+powershell -ExecutionPolicy Bypass -c "& { $(irm https://raw.githubusercontent.com/prods/memoid/main/scripts/install.ps1) } my-workspace"
+```
+
+### How it works
+- **Initial Setup**: Clones the engine, creates your workspace directory, and seeds it with the required folders and templates.
+- **Upgrades**: Running the command again (or running `bash scripts/install.sh` from inside a workspace) updates the scripts, protocols, and skills while **preserving** your `raw/`, `wiki/`, `evidence/`, and `agents/` data.
+- **CLI Dispatcher**: Automatically symlinks `memoid` into `~/.local/bin/memoid`. This allows you to launch any agent within a workspace using:
+  `memoid <workspace> <agent> [args...]`
+  Example: `memoid personal claude`
+- **New Workspace**: Create a new workspace with `memoid new <name>`.
+- **Updates**: Run `memoid update` to pull the latest engine changes from GitHub (switches to the latest git tag) and sync your current workspace.
+- **Version**: Run `memoid version` to see the current engine version (git tag).
+- **Dependencies**: Requires `git`, `rsync` (Linux/macOS) or `robocopy` (Windows), and [uv](https://github.com/astral-sh/uv).
+
 
 ## What This Is
 
@@ -201,6 +228,23 @@ should map to:
 2. `uv run python scripts/post_init_check.py`
 
 This prepares the local `uv` environment, checks the required imports, and verifies that the repo structure is ready.
+If runtime folders such as `raw/` or `evidence/sessions/` are missing, init creates them.
+
+## Workspace Install And Update
+
+Use the launcher scripts when you want one shared engine repo and separate knowledge-base workspaces.
+
+- Linux or macOS: `bash scripts/install.sh`
+- Windows PowerShell: `powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1`
+
+The launcher does four things:
+
+- clones or updates the Memo engine repo under `~/Documents/loci/memo-engine`
+- asks which workspace to create or update under `~/Documents/loci/workspaces/<name>`
+- syncs engine-managed files into that workspace
+- preserves `raw/`, `evidence/`, `wiki/`, and `agents/` so your knowledge data is not overwritten during updates
+
+For a brand-new workspace, it also seeds `wiki/` and `agents/` from the engine template and creates the runtime directory scaffold for `raw/` and `evidence/`.
 
 ## 1. Wake-Up
 

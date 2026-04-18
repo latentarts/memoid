@@ -1,4 +1,4 @@
-# SPEC: Hybrid Wiki Memory Agent
+# SPEC: Memo
 
 ## Purpose
 
@@ -590,4 +590,3 @@ So the intended system is:
 - maintained by a small set of explicit skills
 
 That gives you a wiki that is not just informative, but reliable enough to function as an AI agent’s long-term memory.
-

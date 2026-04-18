@@ -2,7 +2,7 @@
 
 ## Summary
 
-This is the current primary domain page for the repository.
+This is the current primary domain page for Memo.
 
 ## Current
 
@@ -25,4 +25,3 @@ This is the current primary domain page for the repository.
 ## Sources
 
 - `SPEC.md`
-

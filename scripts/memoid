@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+set -e
+
+# Memoid CLI Dispatcher
+# Usage: memoid <workspace> <agent> [args...]
+
+BASE_DIR="${LOCI_BASE_DIR:-$HOME/Documents/loci}"
+WORKSPACES_DIR="${LOCI_WORKSPACES_DIR:-$BASE_DIR/workspaces}"
+
+# Help message
+show_help() {
+  printf "Usage: memoid <workspace> <agent> [args...]\n"
+  printf "       memoid new <workspace-name>\n"
+  printf "       memoid update\n"
+  printf "       memoid version\n"
+  printf "Example: memoid personal claude\n"
+  exit 1
+}
+
+if [[ $# -lt 1 ]]; then
+  show_help
+fi
+
+# Handle version command
+if [[ "$1" == "version" ]]; then
+  ENGINE_DIR="${LOCI_ENGINE_DIR:-$BASE_DIR/memo-engine}"
+  if [[ -d "$ENGINE_DIR/.git" ]]; then
+    VERSION=$(git -C "$ENGINE_DIR" describe --tags --always 2>/dev/null || echo "untagged")
+    printf "Memoid version: %s\n" "$VERSION"
+  else
+    printf "Memoid version: unknown (engine not found)\n"
+  fi
+  exit 0
+fi
+
+# Handle new command
+if [[ "$1" == "new" ]]; then
+  if [[ $# -lt 2 ]]; then
+    printf "Usage: memoid new <workspace-name>\n"
+    exit 1
+  fi
+  WORKSPACE_NAME="$2"
+  ENGINE_DIR="${LOCI_ENGINE_DIR:-$BASE_DIR/memo-engine}"
+  if [[ -f "$ENGINE_DIR/scripts/install.sh" ]]; then
+    exec "$ENGINE_DIR/scripts/install.sh" "$WORKSPACE_NAME"
+  else
+    printf "Error: Install script not found at %s/scripts/install.sh\n" "$ENGINE_DIR" >&2
+    exit 1
+  fi
+  exit 0
+fi
+
+# Handle update command
+if [[ "$1" == "update" ]]; then
+  ENGINE_DIR="${LOCI_ENGINE_DIR:-$BASE_DIR/memo-engine}"
+  printf "Updating Memoid engine in %s...\n" "$ENGINE_DIR"
+  if [[ -d "$ENGINE_DIR/.git" ]]; then
+    git -C "$ENGINE_DIR" fetch --tags --prune
+    
+    # Get latest tag
+    LATEST_TAG=$(git -C "$ENGINE_DIR" tag --sort=-v:refname | head -n 1)
+    
+    if [[ -n "$LATEST_TAG" ]]; then
+      printf "Switching to latest tag: %s\n" "$LATEST_TAG"
+      git -C "$ENGINE_DIR" checkout "$LATEST_TAG"
+    else
+      printf "No tags found, pulling latest from main...\n"
+      git -C "$ENGINE_DIR" pull --ff-only
+    fi
+    
+    printf "Memoid engine updated successfully.\n"
+    
+    # If we are inside a workspace, offer to sync
+    if [[ -f ".loci-workspace" ]]; then
+       printf "Detected workspace context. Running install script to sync engine changes...\n"
+       exec "$ENGINE_DIR/scripts/install.sh"
+    fi
+  else
+    printf "Error: Engine repository not found at %s\n" "$ENGINE_DIR" >&2
+    exit 1
+  fi
+  exit 0
+fi
+
+if [[ $# -lt 2 ]]; then
+  show_help
+fi
+
+WORKSPACE_NAME="$1"
+AGENT_CMD="$2"
+shift 2
+
+WORKSPACE_DIR="$WORKSPACES_DIR/$WORKSPACE_NAME"
+
+if [[ ! -d "$WORKSPACE_DIR" ]]; then
+  printf "Error: Workspace '%s' not found in %s\n" "$WORKSPACE_NAME" "$WORKSPACES_DIR" >&2
+  exit 1
+fi
+
+if ! command -v "$AGENT_CMD" >/dev/null 2>&1; then
+  printf "Error: Agent command '%s' not found in PATH\n" "$AGENT_CMD" >&2
+  exit 1
+fi
+
+# Change directory and execute agent command
+cd "$WORKSPACE_DIR"
+exec "$AGENT_CMD" "$@"
