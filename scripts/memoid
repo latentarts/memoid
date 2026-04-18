@@ -10,6 +10,7 @@ WORKSPACES_DIR="${MEMOID_WORKSPACES_DIR:-$BASE_DIR/workspaces}"
 # Help message
 show_help() {
   printf "Usage: memoid <workspace> <agent> [args...]\n"
+  printf "       memoid ls\n"
   printf "       memoid new <workspace-name>\n"
   printf "       memoid update\n"
   printf "       memoid version\n"
@@ -19,6 +20,17 @@ show_help() {
 
 if [[ $# -lt 1 ]]; then
   show_help
+fi
+
+# Handle ls command
+if [[ "$1" == "ls" ]]; then
+  if [[ -d "$WORKSPACES_DIR" ]]; then
+    printf "Existing workspaces in %s:\n" "$WORKSPACES_DIR"
+    ls -1 "$WORKSPACES_DIR"
+  else
+    printf "No workspaces directory found at %s\n" "$WORKSPACES_DIR"
+  fi
+  exit 0
 fi
 
 # Handle version command

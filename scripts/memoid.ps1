@@ -17,6 +17,7 @@ $WorkspacesDir = if ($env:MEMOID_WORKSPACES_DIR) { $env:MEMOID_WORKSPACES_DIR } 
 
 function Show-Help {
     Write-Host "Usage: memoid <workspace> <agent> [args...]" -ForegroundColor Cyan
+    Write-Host "       memoid ls" -ForegroundColor Cyan
     Write-Host "       memoid new <workspace-name>" -ForegroundColor Cyan
     Write-Host "       memoid update" -ForegroundColor Cyan
     Write-Host "       memoid version" -ForegroundColor Cyan
@@ -26,6 +27,17 @@ function Show-Help {
 if (-not $WorkspaceName) {
     Show-Help
     exit 1
+}
+
+# Handle ls command
+if ($WorkspaceName -eq "ls") {
+    if (Test-Path $WorkspacesDir) {
+        Write-Host "Existing workspaces in $WorkspacesDir:" -ForegroundColor Cyan
+        Get-ChildItem $WorkspacesDir | Select-Object -ExpandProperty Name
+    } else {
+        Write-Host "No workspaces directory found at $WorkspacesDir" -ForegroundColor Yellow
+    }
+    exit 0
 }
 
 # Handle version command

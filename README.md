@@ -28,6 +28,7 @@ powershell -ExecutionPolicy Bypass -c "& { $(irm https://raw.githubusercontent.c
   `memoid <workspace> <agent> [args...]`
   Example: `memoid personal claude`
 - **New Workspace**: Create a new workspace with `memoid new <name>`.
+- **List Workspaces**: Run `memoid ls` to see all available workspaces.
 - **Updates**: Run `memoid update` to pull the latest engine changes from GitHub (switches to the latest git tag) and sync your current workspace.
 - **Version**: Run `memoid version` to see the current engine version (git tag).
 - **Dependencies**: Requires `git`, `rsync` (Linux/macOS) or `robocopy` (Windows), and [uv](https://github.com/astral-sh/uv).
