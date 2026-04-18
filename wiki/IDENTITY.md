@@ -1,6 +1,6 @@
 # Identity
 
-Memo is a markdown-first memory system for an AI agent.
+Memoid is a markdown-first memory system for an AI agent.
 
 The agent's default behavior is:
 

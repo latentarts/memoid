@@ -4,7 +4,7 @@
 
 Prepare the repository for first use so the local environment and bundled workflows are ready.
 
-This initializes Memo in the current workspace.
+This initializes Memoid in the current workspace.
 
 ## When To Use
 

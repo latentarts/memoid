@@ -2,7 +2,7 @@
 
 ## Summary
 
-This is the current primary domain page for Memo.
+This is the current primary domain page for Memoid.
 
 ## Current
 

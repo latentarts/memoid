@@ -1,14 +1,14 @@
-# Memo
+# Memoid
 
-Memo is a markdown-first memory system for AI agents.
+Memoid is a markdown-first memory system for AI agents.
 
 It is designed for a simple problem: most LLM workflows either keep too little memory or rely on retrieval from raw documents every time. This repo takes a different approach. It maintains a persistent wiki that compounds over time, but adds enough operational discipline that the wiki stays useful as an agent memory layer instead of turning into an ungrounded pile of summaries.
 
-The architecture is defined in [SPEC.md](./SPEC.md). This README is the user guide for Memo.
+The architecture is defined in [SPEC.md](./SPEC.md). This README is the user guide for Memoid.
 
 ## Installation & Upgrades
 
-Memo uses a "managed engine" model. You keep one central engine repository and create separate knowledge-base workspaces for different projects.
+Memoid uses a "managed engine" model. You keep one central engine repository and create separate knowledge-base workspaces for different projects.
 
 ### One-Line Install (Linux/macOS)
 To create a new workspace or update an existing one:

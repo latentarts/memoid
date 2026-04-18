@@ -67,7 +67,7 @@ def main() -> int:
     except Exception as exc:  # noqa: BLE001
         return fail(f"download_urls.py failed syntax check: {exc}")
 
-    print("Memo post-init check passed; runtime directories are ready")
+    print("Memoid post-init check passed; runtime directories are ready")
     return 0
 
 

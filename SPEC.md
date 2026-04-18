@@ -1,4 +1,4 @@
-# SPEC: Memo
+# SPEC: Memoid
 
 ## Purpose
 

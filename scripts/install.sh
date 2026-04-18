@@ -200,7 +200,7 @@ main() {
   fi
 
   printf '\nWorkspace ready: %s\n' "$WORKSPACE_DIR"
-  printf 'Memo engine repo: %s\n' "$ENGINE_DIR"
+  printf 'Memoid engine repo: %s\n' "$ENGINE_DIR"
   printf '\nNext step:\n'
   printf '  cd "%s" && uv sync && uv run python scripts/post_init_check.py\n' "$WORKSPACE_DIR"
   printf '\nRe-running this script updates engine-managed files and preserves raw/, evidence/, wiki/, and agents/.\n'

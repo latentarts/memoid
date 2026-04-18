@@ -1,6 +1,6 @@
 # Overview
 
-Memo implements a hybrid memory pattern for AI agents.
+Memoid implements a hybrid memory pattern for AI agents.
 
 ## Summary
 

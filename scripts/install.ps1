@@ -215,7 +215,7 @@ if (Test-Path $DispatcherSource) {
 
 Write-Host ""
 Write-Host "Workspace ready: $WorkspaceDir"
-Write-Host "Memo engine repo: $EngineDir"
+Write-Host "Memoid engine repo: $EngineDir"
 Write-Host ""
 Write-Host "Next step:"
 Write-Host "  cd `"$WorkspaceDir`"; uv sync; uv run python scripts/post_init_check.py"

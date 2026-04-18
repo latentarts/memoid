@@ -5,7 +5,7 @@ description: Initialize Memo for first use by syncing the local uv environment a
 
 # Init
 
-Use this skill to prepare Memo for first use.
+Use this skill to prepare Memoid for first use.
 
 ## Read First
 
@@ -34,3 +34,4 @@ Report:
 - Treat `init` and `initialize it` as direct triggers for this workflow.
 - Stop and report clearly if dependency installation fails.
 - Do not ingest sources as part of init.
+
