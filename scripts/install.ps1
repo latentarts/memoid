@@ -1,5 +1,10 @@
 [CmdletBinding()]
-param()
+param(
+    [Parameter(Position=0)]
+    [string]$WorkspaceArg,
+
+    [switch]$Local
+)
 
 $ErrorActionPreference = "Stop"
 
@@ -174,11 +179,17 @@ if ($null -ne $existing) {
     $WorkspaceDir = $existing.Dir
 } else {
     New-Item -ItemType Directory -Force -Path $WorkspacesDir | Out-Null
-    $WorkspaceName = Prompt-WorkspaceName -PassedName ($args[0])
+    $WorkspaceName = Prompt-WorkspaceName -PassedName $WorkspaceArg
     $WorkspaceDir = Join-Path $WorkspacesDir $WorkspaceName
 }
 
-Update-EngineRepo
+if ($Local) {
+    # In local mode, the engine is the parent of the scripts directory
+    $EngineDir = Split-Path -Parent $PSScriptRoot
+    Write-Host "Local mode: using engine from $EngineDir"
+} else {
+    Update-EngineRepo
+}
 
 New-Item -ItemType Directory -Force -Path $WorkspaceDir | Out-Null
 

@@ -151,15 +151,37 @@ main() {
   require_command rsync
   require_command uv
 
+  LOCAL_MODE=false
+  WORKSPACE_ARG=""
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --local)
+        LOCAL_MODE=true
+        shift
+        ;;
+      *)
+        WORKSPACE_ARG="$1"
+        shift
+        ;;
+    esac
+  done
+
   if detect_workspace; then
     printf 'Detected existing workspace: %s\n' "$WORKSPACE_NAME"
   else
     mkdir -p "$WORKSPACES_DIR"
-    prompt_workspace_name "${1:-}"
+    prompt_workspace_name "$WORKSPACE_ARG"
     WORKSPACE_DIR="$WORKSPACES_DIR/$WORKSPACE_NAME"
   fi
 
-  update_engine_repo
+  if [ "$LOCAL_MODE" = true ]; then
+    # In local mode, the engine is the parent of the scripts directory
+    ENGINE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    printf 'Local mode: using engine from %s\n' "$ENGINE_DIR"
+  else
+    update_engine_repo
+  fi
 
   mkdir -p "$WORKSPACE_DIR"
   printf 'Syncing engine files into %s\n' "$WORKSPACE_DIR"
