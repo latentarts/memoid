@@ -239,8 +239,8 @@ Use the launcher scripts when you want one shared engine repo and separate knowl
 
 The launcher does four things:
 
-- clones or updates the Memo engine repo under `~/Documents/loci/memo-engine`
-- asks which workspace to create or update under `~/Documents/loci/workspaces/<name>`
+- clones or updates the Memoid engine repo under `~/Documents/memoid/memoid-engine`
+- asks which workspace to create or update under `~/Documents/memoid/workspaces/<name>`
 - syncs engine-managed files into that workspace
 - preserves `raw/`, `evidence/`, `wiki/`, and `agents/` so your knowledge data is not overwritten during updates
 

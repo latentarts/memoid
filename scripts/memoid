@@ -4,8 +4,8 @@ set -e
 # Memoid CLI Dispatcher
 # Usage: memoid <workspace> <agent> [args...]
 
-BASE_DIR="${LOCI_BASE_DIR:-$HOME/Documents/loci}"
-WORKSPACES_DIR="${LOCI_WORKSPACES_DIR:-$BASE_DIR/workspaces}"
+BASE_DIR="${MEMOID_BASE_DIR:-$HOME/Documents/memoid}"
+WORKSPACES_DIR="${MEMOID_WORKSPACES_DIR:-$BASE_DIR/workspaces}"
 
 # Help message
 show_help() {
@@ -23,7 +23,7 @@ fi
 
 # Handle version command
 if [[ "$1" == "version" ]]; then
-  ENGINE_DIR="${LOCI_ENGINE_DIR:-$BASE_DIR/memo-engine}"
+  ENGINE_DIR="${MEMOID_ENGINE_DIR:-$BASE_DIR/memoid-engine}"
   if [[ -d "$ENGINE_DIR/.git" ]]; then
     VERSION=$(git -C "$ENGINE_DIR" describe --tags --always 2>/dev/null || echo "untagged")
     printf "Memoid version: %s\n" "$VERSION"
@@ -40,7 +40,7 @@ if [[ "$1" == "new" ]]; then
     exit 1
   fi
   WORKSPACE_NAME="$2"
-  ENGINE_DIR="${LOCI_ENGINE_DIR:-$BASE_DIR/memo-engine}"
+  ENGINE_DIR="${MEMOID_ENGINE_DIR:-$BASE_DIR/memoid-engine}"
   if [[ -f "$ENGINE_DIR/scripts/install.sh" ]]; then
     exec "$ENGINE_DIR/scripts/install.sh" "$WORKSPACE_NAME"
   else
@@ -52,7 +52,7 @@ fi
 
 # Handle update command
 if [[ "$1" == "update" ]]; then
-  ENGINE_DIR="${LOCI_ENGINE_DIR:-$BASE_DIR/memo-engine}"
+  ENGINE_DIR="${MEMOID_ENGINE_DIR:-$BASE_DIR/memoid-engine}"
   printf "Updating Memoid engine in %s...\n" "$ENGINE_DIR"
   if [[ -d "$ENGINE_DIR/.git" ]]; then
     git -C "$ENGINE_DIR" fetch --tags --prune
@@ -71,7 +71,7 @@ if [[ "$1" == "update" ]]; then
     printf "Memoid engine updated successfully.\n"
     
     # If we are inside a workspace, offer to sync
-    if [[ -f ".loci-workspace" ]]; then
+    if [[ -f ".memoid-workspace" ]]; then
        printf "Detected workspace context. Running install script to sync engine changes...\n"
        exec "$ENGINE_DIR/scripts/install.sh"
     fi

@@ -8,11 +8,11 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$RepoUrl = if ($env:LOCI_REPO_URL) { $env:LOCI_REPO_URL } else { "https://github.com/prods/memoid.git" }
+$RepoUrl = if ($env:MEMOID_REPO_URL) { $env:MEMOID_REPO_URL } else { "https://github.com/prods/memoid.git" }
 $DocumentsDir = [Environment]::GetFolderPath("MyDocuments")
-$BaseDir = if ($env:LOCI_BASE_DIR) { $env:LOCI_BASE_DIR } else { Join-Path $DocumentsDir "loci" }
-$EngineDir = if ($env:LOCI_ENGINE_DIR) { $env:LOCI_ENGINE_DIR } else { Join-Path $BaseDir "memo-engine" }
-$WorkspacesDir = if ($env:LOCI_WORKSPACES_DIR) { $env:LOCI_WORKSPACES_DIR } else { Join-Path $BaseDir "workspaces" }
+$BaseDir = if ($env:MEMOID_BASE_DIR) { $env:MEMOID_BASE_DIR } else { Join-Path $DocumentsDir "memoid" }
+$EngineDir = if ($env:MEMOID_ENGINE_DIR) { $env:MEMOID_ENGINE_DIR } else { Join-Path $BaseDir "memoid-engine" }
+$WorkspacesDir = if ($env:MEMOID_WORKSPACES_DIR) { $env:MEMOID_WORKSPACES_DIR } else { Join-Path $BaseDir "workspaces" }
 $PreserveDirs = @("raw", "evidence", "wiki", "agents")
 
 function Require-Command {
@@ -42,8 +42,8 @@ function Require-Command {
 }
 
 function Detect-Workspace {
-    if (Test-Path ".loci-workspace") {
-        $config = Get-Content ".loci-workspace" | ConvertFrom-StringData
+    if (Test-Path ".memoid-workspace") {
+        $config = Get-Content ".memoid-workspace" | ConvertFrom-StringData
         if ($config.WORKSPACE_NAME) {
             return @{
                 Name = $config.WORKSPACE_NAME
@@ -90,7 +90,7 @@ function Update-EngineRepo {
 function Sync-EngineToWorkspace {
     param([string]$WorkspaceDir)
 
-    $xd = @(".git", ".venv", "__pycache__", ".loci-workspace") + $PreserveDirs
+    $xd = @(".git", ".venv", "__pycache__", ".memoid-workspace") + $PreserveDirs
     $arguments = @(
         $EngineDir,
         $WorkspaceDir,
@@ -165,7 +165,7 @@ function Write-WorkspaceConfig {
         "ENGINE_DIR=$EngineDir"
         "WORKSPACE_NAME=$WorkspaceName"
     )
-    Set-Content -Path (Join-Path $WorkspaceDir ".loci-workspace") -Value $content
+    Set-Content -Path (Join-Path $WorkspaceDir ".memoid-workspace") -Value $content
 }
 
 Require-Command git

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_URL="${LOCI_REPO_URL:-https://github.com/prods/memoid.git}"
-BASE_DIR="${LOCI_BASE_DIR:-$HOME/Documents/loci}"
-ENGINE_DIR="${LOCI_ENGINE_DIR:-$BASE_DIR/memo-engine}"
-WORKSPACES_DIR="${LOCI_WORKSPACES_DIR:-$BASE_DIR/workspaces}"
+REPO_URL="${MEMOID_REPO_URL:-https://github.com/prods/memoid.git}"
+BASE_DIR="${MEMOID_BASE_DIR:-$HOME/Documents/memoid}"
+ENGINE_DIR="${MEMOID_ENGINE_DIR:-$BASE_DIR/memoid-engine}"
+WORKSPACES_DIR="${MEMOID_WORKSPACES_DIR:-$BASE_DIR/workspaces}"
 PRESERVE_DIRS=(raw evidence wiki agents)
 
 require_command() {
@@ -39,9 +39,9 @@ require_command() {
 }
 
 detect_workspace() {
-  if [[ -f ".loci-workspace" ]]; then
+  if [[ -f ".memoid-workspace" ]]; then
     # shellcheck disable=SC1091
-    WORKSPACE_NAME=$(grep "WORKSPACE_NAME=" .loci-workspace | cut -d'=' -f2)
+    WORKSPACE_NAME=$(grep "WORKSPACE_NAME=" .memoid-workspace | cut -d'=' -f2)
     if [[ -n "$WORKSPACE_NAME" ]]; then
       WORKSPACE_DIR=$(pwd)
       return 0
@@ -101,7 +101,7 @@ sync_engine_to_workspace() {
     --exclude
     ".DS_Store"
     --exclude
-    ".loci-workspace"
+    ".memoid-workspace"
   )
   local dir
   for dir in "${PRESERVE_DIRS[@]}"; do
@@ -139,7 +139,7 @@ ensure_runtime_dirs() {
 
 write_workspace_config() {
   local workspace_dir="$1"
-  cat >"$workspace_dir/.loci-workspace" <<EOF
+  cat >"$workspace_dir/.memoid-workspace" <<EOF
 REPO_URL=$REPO_URL
 ENGINE_DIR=$ENGINE_DIR
 WORKSPACE_NAME=$WORKSPACE_NAME

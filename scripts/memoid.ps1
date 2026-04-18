@@ -12,8 +12,8 @@ param(
 $ErrorActionPreference = "Stop"
 
 $DocumentsDir = [Environment]::GetFolderPath("MyDocuments")
-$BaseDir = if ($env:LOCI_BASE_DIR) { $env:LOCI_BASE_DIR } else { Join-Path $DocumentsDir "loci" }
-$WorkspacesDir = if ($env:LOCI_WORKSPACES_DIR) { $env:LOCI_WORKSPACES_DIR } else { Join-Path $BaseDir "workspaces" }
+$BaseDir = if ($env:MEMOID_BASE_DIR) { $env:MEMOID_BASE_DIR } else { Join-Path $DocumentsDir "memoid" }
+$WorkspacesDir = if ($env:MEMOID_WORKSPACES_DIR) { $env:MEMOID_WORKSPACES_DIR } else { Join-Path $BaseDir "workspaces" }
 
 function Show-Help {
     Write-Host "Usage: memoid <workspace> <agent> [args...]" -ForegroundColor Cyan
@@ -30,7 +30,7 @@ if (-not $WorkspaceName) {
 
 # Handle version command
 if ($WorkspaceName -eq "version") {
-    $EngineDir = if ($env:LOCI_ENGINE_DIR) { $env:LOCI_ENGINE_DIR } else { Join-Path $BaseDir "memo-engine" }
+    $EngineDir = if ($env:MEMOID_ENGINE_DIR) { $env:MEMOID_ENGINE_DIR } else { Join-Path $BaseDir "memoid-engine" }
     if (Test-Path (Join-Path $EngineDir ".git")) {
         $Version = git -C $EngineDir describe --tags --always
         Write-Host "Memoid version: $Version"
@@ -46,7 +46,7 @@ if ($WorkspaceName -eq "new") {
         Write-Host "Usage: memoid new <workspace-name>" -ForegroundColor Red
         exit 1
     }
-    $EngineDir = if ($env:LOCI_ENGINE_DIR) { $env:LOCI_ENGINE_DIR } else { Join-Path $BaseDir "memo-engine" }
+    $EngineDir = if ($env:MEMOID_ENGINE_DIR) { $env:MEMOID_ENGINE_DIR } else { Join-Path $BaseDir "memoid-engine" }
     $InstallScript = Join-Path $EngineDir "scripts\install.ps1"
     if (Test-Path $InstallScript) {
         & $InstallScript $AgentCmd
@@ -59,7 +59,7 @@ if ($WorkspaceName -eq "new") {
 
 # Handle update command
 if ($WorkspaceName -eq "update") {
-    $EngineDir = if ($env:LOCI_ENGINE_DIR) { $env:LOCI_ENGINE_DIR } else { Join-Path $BaseDir "memo-engine" }
+    $EngineDir = if ($env:MEMOID_ENGINE_DIR) { $env:MEMOID_ENGINE_DIR } else { Join-Path $BaseDir "memoid-engine" }
     Write-Host "Updating Memoid engine in $EngineDir..." -ForegroundColor Cyan
     if (Test-Path (Join-Path $EngineDir ".git")) {
         git -C $EngineDir fetch --tags --prune
@@ -78,7 +78,7 @@ if ($WorkspaceName -eq "update") {
         Write-Host "Memoid engine updated successfully." -ForegroundColor Green
         
         # If we are inside a workspace, offer to sync
-        if (Test-Path ".loci-workspace") {
+        if (Test-Path ".memoid-workspace") {
             Write-Host "Detected workspace context. Running install script to sync engine changes..." -ForegroundColor Cyan
             & (Join-Path $EngineDir "scripts\install.ps1")
         }
