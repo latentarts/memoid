@@ -15,6 +15,18 @@ $DocumentsDir = [Environment]::GetFolderPath("MyDocuments")
 $BaseDir = if ($env:MEMOID_BASE_DIR) { $env:MEMOID_BASE_DIR } else { Join-Path $DocumentsDir "memoid" }
 $WorkspacesDir = if ($env:MEMOID_WORKSPACES_DIR) { $env:MEMOID_WORKSPACES_DIR } else { Join-Path $BaseDir "workspaces" }
 
+# If inside a workspace, try to load its config
+$DefaultEngineDir = Join-Path $BaseDir "memoid-engine"
+if (Test-Path ".memoid-workspace") {
+    $config = Get-Content ".memoid-workspace" | ConvertFrom-StringData
+    if ($config.ENGINE_DIR) {
+        $DefaultEngineDir = $config.ENGINE_DIR
+    }
+}
+
+# Use explicit env var if set, then loaded dir, then global default
+$EngineDir = if ($env:MEMOID_ENGINE_DIR) { $env:MEMOID_ENGINE_DIR } else { $DefaultEngineDir }
+
 function Show-Help {
     Write-Host "Usage: memoid <workspace> <agent> [args...]" -ForegroundColor Cyan
     Write-Host "       memoid ls" -ForegroundColor Cyan
@@ -71,7 +83,6 @@ if ($WorkspaceName -eq "new") {
 
 # Handle update command
 if ($WorkspaceName -eq "update") {
-    $EngineDir = if ($env:MEMOID_ENGINE_DIR) { $env:MEMOID_ENGINE_DIR } else { Join-Path $BaseDir "memoid-engine" }
     Write-Host "Updating Memoid engine in $EngineDir..." -ForegroundColor Cyan
     if (Test-Path (Join-Path $EngineDir ".git")) {
         git -C $EngineDir fetch --tags --prune

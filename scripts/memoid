@@ -7,6 +7,18 @@ set -e
 BASE_DIR="${MEMOID_BASE_DIR:-$HOME/Documents/memoid}"
 WORKSPACES_DIR="${MEMOID_WORKSPACES_DIR:-$BASE_DIR/workspaces}"
 
+# If inside a workspace, try to load its config
+if [[ -f ".memoid-workspace" ]]; then
+  # shellcheck disable=SC1091
+  LOADED_ENGINE_DIR=$(grep "ENGINE_DIR=" .memoid-workspace | cut -d'=' -f2)
+  if [[ -n "$LOADED_ENGINE_DIR" ]]; then
+    DEFAULT_ENGINE_DIR="$LOADED_ENGINE_DIR"
+  fi
+fi
+
+# Use explicit env var if set, then loaded dir, then global default
+ENGINE_DIR="${MEMOID_ENGINE_DIR:-${DEFAULT_ENGINE_DIR:-$BASE_DIR/memoid-engine}}"
+
 # Help message
 show_help() {
   printf "Usage: memoid <workspace> <agent> [args...]\n"
@@ -64,7 +76,6 @@ fi
 
 # Handle update command
 if [[ "$1" == "update" ]]; then
-  ENGINE_DIR="${MEMOID_ENGINE_DIR:-$BASE_DIR/memoid-engine}"
   printf "Updating Memoid engine in %s...\n" "$ENGINE_DIR"
   if [[ -d "$ENGINE_DIR/.git" ]]; then
     git -C "$ENGINE_DIR" fetch --tags --prune
