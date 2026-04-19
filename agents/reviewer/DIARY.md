@@ -1,7 +1,7 @@
 # Reviewer Diary
 
-## 2026-04-21
+## Notable Patterns
+*(Add specialist patterns and habits here)*
 
-- Initial scaffold established.
-- Future review passes should focus on summary drift, missing links, and duplicated concepts.
-
+## Chronology
+*(Log specialist-specific lessons here)*

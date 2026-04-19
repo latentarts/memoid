@@ -2,20 +2,14 @@
 
 ## Current State
 
-- This repo is being set up as a hybrid wiki memory agent.
-- The architecture blends Karpathy's wiki pattern with selected MemPalace ideas.
-- `SPEC.md` is the canonical design document for the system.
+- This is a new Memoid workspace.
+- The environment has been initialized and is ready for use.
 
 ## Active Threads
 
-- establish the file layout
-- define operating protocols
-- create starter canonical pages
-- prepare the repo for future ingest and retrieval workflows
+- Setup new canonical pages based on the user's project domain.
+- Begin ingesting raw sources and building evidence.
 
 ## Open Questions
 
-- which domains should become first-class canonical pages first
-- which specialist agents are actually needed beyond the default skeleton
-- whether future versions need local search tooling beyond filesystem search
-
+- What is the primary focus or domain of this new workspace?

@@ -6,4 +6,3 @@ Focus:
 - extract durable insights
 - strengthen concept and entity pages
 - propose missing pages
-

@@ -1,7 +1,7 @@
 # Researcher Diary
 
-## 2026-04-21
+## Notable Patterns
+*(Add specialist patterns and habits here)*
 
-- The repo currently has structure but not yet a real corpus.
-- Next useful progress will come from ingesting actual source material.
-
+## Chronology
+*(Log specialist-specific lessons here)*

@@ -15,3 +15,20 @@ wheels/
 
 # OS/editor noise
 .DS_Store
+
+# Memoid Workspace Isolation
+# Ignore all dynamically generated knowledge, but keep the template files
+/wiki/*
+!/wiki/IDENTITY.md
+!/wiki/ESSENTIAL_STORY.md
+!/wiki/INDEX.md
+!/wiki/LOG.md
+
+/agents/*/*
+!/agents/*/IDENTITY.md
+!/agents/*/DIARY.md
+!/agents/*/PATTERNS.md
+
+# Ignore all evidence and raw data (keep the directory structure)
+/evidence/*/*
+/raw/*/*

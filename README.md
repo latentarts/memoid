@@ -3,9 +3,7 @@
 > [!WARNING]
 > This is experimental and it's being tested.
 
-Memoid is a markdown-first memory system for AI agents that merges [Karpathy's LLM Wiki approach](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) and [MemPalace](https://github.com/MemPalace/mempalace).
-
-It is designed for a simple problem: most LLM workflows either keep too little memory or rely on retrieval from raw documents every time. This repo takes a different approach. It maintains a persistent wiki that compounds over time, but adds enough operational discipline that the wiki stays useful as an agent memory layer instead of turning into an ungrounded pile of summaries.
+Memoid is a markdown-first memory system for AI agents that merges [Karpathy's LLM Wiki approach](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) and  parts of [MemPalace](https://github.com/MemPalace/mempalace) approaches.
 
 The architecture is defined in [SPEC.md](./SPEC.md). This README is the user guide for Memoid.
 
@@ -223,8 +221,6 @@ The `memoid` script acts as a CLI dispatcher and workspace manager.
 - **Data Preservation**: Upgrades preserve your `raw/`, `wiki/`, `evidence/`, and `agents/` directories.
 - **Developer Mode**: Use `--local` with the install scripts to use the engine from the current directory instead of cloning from GitHub.
 - **Dependencies**: Requires `git`, `rsync` (Linux/macOS) or `robocopy` (Windows), and [uv](https://github.com/astral-sh/uv).
-
-
 
 ## How It Works
 

@@ -1,8 +1,5 @@
 # Log
 
-## [2026-04-21] bootstrap | initial spec and scaffold
+## [Current Date] bootstrap | initial setup
 
-- created `SPEC.md`
-- established the hybrid architecture: Karpathy wiki base plus MemPalace-style operational discipline
-- added the initial repository scaffold across `protocols/`, `wiki/`, `evidence/`, and `agents/`
-
+- workspace initialized

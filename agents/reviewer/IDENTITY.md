@@ -6,4 +6,3 @@ Focus:
 - detect inconsistencies
 - identify unsupported claims
 - improve evidence linkage
-
