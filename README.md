@@ -136,22 +136,37 @@ MemPalace contributes the discipline layer:
 
 The result is a memory system that compounds instead of resetting.
 
-## How It Works
+## Automated AI Orchestration
+
+Memoid is designed to be "self-starting" when used with a compatible AI agent (like Claude Code or Gemini CLI). 
+
+When you open an agent on a Memoid workspace, the agent is instructed to automatically:
+1. **Verify Initialization**: Check if the environment and knowledge base are ready.
+2. **Auto-Initialize**: Run `uv sync` and `post_init_check.py` if needed.
+3. **Wake-Up**: Read core identity and status files to reconstruct the current state.
+
+This means you can usually just start your agent and begin working immediately.
+
+---
+
+## How It Works (Manual Steps)
+
+While orchestration is automated for agents, you can still perform these operations manually if needed.
 
 ### 0. Initialization
 
-On first use, initialize the repo. **Note: [uv](https://github.com/astral-sh/uv) is required to manage the environment and support Python-based skills.**
+Prepare the repo for first use. **Note: [uv](https://github.com/astral-sh/uv) is required to manage the environment and support Python-based skills.**
 
 1. `uv sync`
 2. `uv run python scripts/post_init_check.py`
 
 ### 1. Wake-Up
 
-At the beginning of a session, the agent should read only:
+At the beginning of a session, reconstruct the state by reading:
 
-- `protocols/WAKE_UP.md`
 - `memory/wiki/IDENTITY.md`
 - `memory/wiki/ESSENTIAL_STORY.md`
+- `AGENTS.md`
 
 ```mermaid
 graph LR
