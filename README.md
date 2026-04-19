@@ -238,10 +238,25 @@ Project-local skills are provided under `skills/`:
 
 ## Best Practices
 
-- **Keep `raw/` immutable.**
-- **Link wiki claims to evidence.**
-- **Use `Current` and `History` sections** for facts that can change.
-- **Run periodic lint passes** to catch drift.
+- **Version Control your Memory**: Your `wiki/` and `agents/` directories are where your knowledge compounds. We highly recommend version controlling these files in your own workspace. This allows you to audit agent changes, revert "hallucinations," and sync your memory across machines.
+  > **Tip**: The default `.gitignore` prevents engine artifacts from being tracked. To track your own knowledge, remove the `/wiki/*` and `/agents/*` ignore rules in your local `.gitignore`.
+- **Keep `raw/` immutable**: Never edit files in `raw/`. They are your "ground truth."
+- **Link wiki claims to evidence**: Use citations to point from the wiki back to session or source notes.
+- **Use `Current` and `History` sections**: For facts that change (like project status or entity roles), keep the old data in a `History` section.
+- **Run periodic lint passes**: Use `memoid <workspace> lint` to find orphan pages or contradictions.
+
+```mermaid
+graph LR
+    Agent[Agent Updates Wiki] --> Commit[User Reviews & Commits]
+    Commit --> Truth[Durable Knowledge]
+    Truth --> Agent
+    
+    subgraph "Knowledge Audit Loop"
+    Agent
+    Commit
+    Truth
+    end
+```
 
 ## Related Files
 
