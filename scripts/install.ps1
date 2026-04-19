@@ -11,29 +11,23 @@ $ErrorActionPreference = "Stop"
 $RepoUrl = if ($env:MEMOID_REPO_URL) { $env:MEMOID_REPO_URL } else { "https://github.com/prods/memoid.git" }
 $DocumentsDir = [Environment]::GetFolderPath("MyDocuments")
 $BaseDir = if ($env:MEMOID_BASE_DIR) { $env:MEMOID_BASE_DIR } else { Join-Path $DocumentsDir "memoid" }
-$EngineDir = if ($env:MEMOID_ENGINE_DIR) { $env:MEMOID_ENGINE_DIR } else { Join-Path $BaseDir "memoid-engine" }
 $WorkspacesDir = if ($env:MEMOID_WORKSPACES_DIR) { $env:MEMOID_WORKSPACES_DIR } else { Join-Path $BaseDir "workspaces" }
-$PreserveDirs = @("raw", "evidence", "wiki", "agents")
 
 function Require-Command {
     param([string]$Name)
 
     if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
         if ($Name -eq "uv") {
-            Write-Host "uv is required for the Memo runtime environment." -ForegroundColor Cyan
+            Write-Host "uv is required for the Memoid runtime environment." -ForegroundColor Cyan
             $Choice = Read-Host "Would you like to install it now? [y/N]"
             if ($Choice -match "^[Yy]$") {
                 Write-Host "Installing uv via astral.sh..." -ForegroundColor Cyan
                 powershell -ExecutionPolicy Bypass -c "irm https://astral.sh/uv/install.ps1 | iex"
-                
-                # Check again
                 if (-not (Get-Command "uv" -ErrorAction SilentlyContinue)) {
                     Write-Error "uv installation failed or is not in PATH. Please restart your shell and try again."
                     exit 1
                 }
                 return
-            } else {
-                Write-Host "Tip: install uv from https://github.com/astral-sh/uv" -ForegroundColor Cyan
             }
         }
         Write-Host "Missing required command: $Name" -ForegroundColor Red
@@ -75,66 +69,6 @@ function Prompt-WorkspaceName {
     }
 }
 
-function Update-EngineRepo {
-    New-Item -ItemType Directory -Force -Path $BaseDir | Out-Null
-    if (Test-Path (Join-Path $EngineDir ".git")) {
-        Write-Host "Updating Memo engine repo in $EngineDir"
-        git -C $EngineDir fetch --tags --prune
-        git -C $EngineDir pull --ff-only
-    } else {
-        Write-Host "Cloning Memo engine repo into $EngineDir"
-        git clone $RepoUrl $EngineDir
-    }
-}
-
-function Sync-EngineToWorkspace {
-    param([string]$WorkspaceDir)
-
-    $xd = @(".git", ".venv", "__pycache__", ".memoid-workspace") + $PreserveDirs
-    $arguments = @(
-        $EngineDir,
-        $WorkspaceDir,
-        "/MIR",
-        "/XD"
-    ) + $xd + @(
-        "/XF",
-        ".DS_Store",
-        "/R:1",
-        "/W:1",
-        "/NFL",
-        "/NDL",
-        "/NJH",
-        "/NJS",
-        "/NP"
-    )
-
-    & robocopy @arguments | Out-Null
-    $exitCode = $LASTEXITCODE
-    if ($exitCode -ge 8) {
-        throw "robocopy failed with exit code $exitCode"
-    }
-}
-
-function Seed-DataDirectory {
-    param(
-        [string]$SourceDir,
-        [string]$TargetDir
-    )
-
-    if (Test-Path $TargetDir) {
-        return
-    }
-
-    New-Item -ItemType Directory -Force -Path $TargetDir | Out-Null
-    if (Test-Path $SourceDir) {
-        & robocopy $SourceDir $TargetDir "/E" "/R:1" "/W:1" "/NFL" "/NDL" "/NJH" "/NJS" "/NP" | Out-Null
-        $exitCode = $LASTEXITCODE
-        if ($exitCode -ge 8) {
-            throw "robocopy failed while seeding $TargetDir with exit code $exitCode"
-        }
-    }
-}
-
 function Ensure-RuntimeDirs {
     param([string]$WorkspaceDir)
 
@@ -162,14 +96,12 @@ function Write-WorkspaceConfig {
 
     $content = @(
         "REPO_URL=$RepoUrl"
-        "ENGINE_DIR=$EngineDir"
         "WORKSPACE_NAME=$WorkspaceName"
     )
     Set-Content -Path (Join-Path $WorkspaceDir ".memoid-workspace") -Value $content
 }
 
 Require-Command git
-Require-Command robocopy
 Require-Command uv
 
 $existing = Detect-Workspace
@@ -181,23 +113,22 @@ if ($null -ne $existing) {
     New-Item -ItemType Directory -Force -Path $WorkspacesDir | Out-Null
     $WorkspaceName = Prompt-WorkspaceName -PassedName $WorkspaceArg
     $WorkspaceDir = Join-Path $WorkspacesDir $WorkspaceName
+    
+    if (Test-Path $WorkspaceDir) {
+        Write-Error "Error: Workspace directory $WorkspaceDir already exists."
+        exit 1
+    }
+
+    if ($Local) {
+        $CurrentRepoRoot = Split-Path -Parent $PSScriptRoot
+        Write-Host "Local mode: cloning from $CurrentRepoRoot"
+        git clone $CurrentRepoRoot $WorkspaceDir
+    } else {
+        Write-Host "Cloning Memoid from $RepoUrl into $WorkspaceDir"
+        git clone $RepoUrl $WorkspaceDir
+    }
 }
 
-if ($Local) {
-    # In local mode, the engine is the parent of the scripts directory
-    $EngineDir = Split-Path -Parent $PSScriptRoot
-    Write-Host "Local mode: using engine from $EngineDir"
-} else {
-    Update-EngineRepo
-}
-
-New-Item -ItemType Directory -Force -Path $WorkspaceDir | Out-Null
-
-Write-Host "Syncing engine files into $WorkspaceDir"
-Sync-EngineToWorkspace -WorkspaceDir $WorkspaceDir
-
-Seed-DataDirectory -SourceDir (Join-Path $EngineDir "wiki") -TargetDir (Join-Path $WorkspaceDir "wiki")
-Seed-DataDirectory -SourceDir (Join-Path $EngineDir "agents") -TargetDir (Join-Path $WorkspaceDir "agents")
 Ensure-RuntimeDirs -WorkspaceDir $WorkspaceDir
 Write-WorkspaceConfig -WorkspaceDir $WorkspaceDir -WorkspaceName $WorkspaceName
 
@@ -206,18 +137,14 @@ $LocalBin = Join-Path $HOME ".local\bin"
 if (-not (Test-Path $LocalBin)) {
     New-Item -ItemType Directory -Force -Path $LocalBin | Out-Null
 }
-$DispatcherSource = Join-Path $EngineDir "scripts\memoid.ps1"
+$DispatcherSource = Join-Path $WorkspaceDir "scripts\memoid.ps1"
 if (Test-Path $DispatcherSource) {
     Write-Host "Installing memoid CLI to $LocalBin\memoid.ps1"
-    # Create a small cmd or ps1 wrapper if needed, but for now we just link the script
     New-Item -ItemType SymbolicLink -Path (Join-Path $LocalBin "memoid.ps1") -Target $DispatcherSource -Force | Out-Null
 }
 
 Write-Host ""
 Write-Host "Workspace ready: $WorkspaceDir"
-Write-Host "Memoid engine repo: $EngineDir"
 Write-Host ""
 Write-Host "Next step:"
 Write-Host "  cd `"$WorkspaceDir`"; uv sync; uv run python scripts/post_init_check.py"
-Write-Host ""
-Write-Host "Re-running this script updates engine-managed files and preserves raw/, evidence/, wiki/, and agents/."

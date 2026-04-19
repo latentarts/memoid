@@ -31,7 +31,7 @@ graph TD
     Protocols -- "Operating Rules" --> Agent
 ```
 
-## Three Ways to Use Memoid
+## Two Ways to Use Memoid
 
 Memoid is designed to be flexible, supporting everything from a single project to a multi-workspace fleet.
 
@@ -41,31 +41,25 @@ If you only need one memory system for one project:
 2. `cd my-project && uv sync`
 3. Start your AI agent. The repo comes pre-configured with a clean `wiki/` and `agents/` structure.
 
-### 2. Managed Engine (The "Launcher" Model)
-If you want to manage multiple workspaces from a single central engine:
-1. Run the [One-Line Install](#installation--upgrades).
-2. This creates an engine in `~/Documents/memoid/memoid-engine`.
-3. It creates isolated workspaces in `~/Documents/memoid/workspaces/`.
-4. Your personal data in `wiki/`, `raw/`, etc., is never overwritten when you update the engine.
-
-### 3. CLI Dispatcher (The "Power User" Model)
-Once installed via the launcher, the `memoid` CLI becomes your primary tool:
-- `memoid ls`: List your workspaces.
-- `memoid new <name>`: Create a new isolated knowledge base.
-- `memoid <workspace> <agent>`: Launch an agent (like `claude` or `gpt4`) directly inside a specific workspace.
+### 2. Managed Workspaces (The "CLI" Model)
+If you want to manage multiple isolated knowledge bases:
+1. Run the [One-Line Install](#installation--upgrades) to create your first workspace and install the `memoid` CLI.
+2. Use `memoid new <name>` to create additional workspaces.
+3. Use `memoid ls` to list your workspaces.
+4. Use `memoid <workspace> <agent>` to launch an agent (like `claude` or `gpt4`) directly inside a specific workspace.
 
 ```mermaid
-graph LR
-    Engine[Memoid Engine]
+graph TD
+    CLI[memoid CLI]
     WS1[Workspace 1]
     WS2[Workspace 2]
     WSN[Workspace N]
 
-    Engine -- "Syncs Core Protocols & Skills" --> WS1
-    Engine -- "Syncs Core Protocols & Skills" --> WS2
-    Engine -- "Syncs Core Protocols & Skills" --> WSN
+    CLI -- "new / ls / update" --> WS1
+    CLI -- "new / ls / update" --> WS2
+    CLI -- "new / ls / update" --> WSN
 
-    subgraph "Isolated Data"
+    subgraph "Independent Repositories"
     WS1 --- D1(wiki, raw, evidence)
     WS2 --- D2(wiki, raw, evidence)
     WSN --- DN(wiki, raw, evidence)
@@ -91,16 +85,15 @@ powershell -ExecutionPolicy Bypass -c "& { $(irm https://raw.githubusercontent.c
 
 | Command | Description |
 | :--- | :--- |
-| `memoid <workspace> <agent> [args...]` | Launches any agent within a workspace. Example: `memoid personal claude` |
-| `memoid new <name>` | Creates a new workspace and seeds it with the required folders and templates. |
+| `memoid <workspace> <agent> [args...]` | Launches any agent within a workspace. |
+| `memoid new <name>` | Creates a new isolated workspace by cloning the repo. |
 | `memoid ls` | List all available workspaces. |
-| `memoid update` | Pulls the latest engine changes and syncs your current workspace while preserving data. |
-| `memoid version` | Displays the current engine version (git tag). |
+| `memoid update [name]` | Pulls the latest changes for a workspace (defaults to current dir). |
+| `memoid version [name]` | Displays the version of a workspace (defaults to current dir). |
 
 - **Mechanism**: Automatically symlinks `memoid` into `~/.local/bin/memoid` (Linux/macOS) or `memoid.ps1` (Windows) for global access.
-- **Data Preservation**: Upgrades preserve your `raw/`, `wiki/`, `evidence/`, and `agents/` directories.
-- **Developer Mode**: Use `--local` with the install scripts to use the engine from the current directory instead of cloning from GitHub.
-- **Dependencies**: Requires `git`, `rsync` (Linux/macOS) or `robocopy` (Windows), and [uv](https://github.com/astral-sh/uv).
+- **Developer Mode**: Use `--local` with the install scripts to clone from your local engine copy instead of GitHub.
+- **Dependencies**: Requires `git` and [uv](https://github.com/astral-sh/uv).
 
 ## Repository Layout
 

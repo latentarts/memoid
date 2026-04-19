@@ -15,24 +15,12 @@ $DocumentsDir = [Environment]::GetFolderPath("MyDocuments")
 $BaseDir = if ($env:MEMOID_BASE_DIR) { $env:MEMOID_BASE_DIR } else { Join-Path $DocumentsDir "memoid" }
 $WorkspacesDir = if ($env:MEMOID_WORKSPACES_DIR) { $env:MEMOID_WORKSPACES_DIR } else { Join-Path $BaseDir "workspaces" }
 
-# If inside a workspace, try to load its config
-$DefaultEngineDir = Join-Path $BaseDir "memoid-engine"
-if (Test-Path ".memoid-workspace") {
-    $config = Get-Content ".memoid-workspace" | ConvertFrom-StringData
-    if ($config.ENGINE_DIR) {
-        $DefaultEngineDir = $config.ENGINE_DIR
-    }
-}
-
-# Use explicit env var if set, then loaded dir, then global default
-$EngineDir = if ($env:MEMOID_ENGINE_DIR) { $env:MEMOID_ENGINE_DIR } else { $DefaultEngineDir }
-
 function Show-Help {
     Write-Host "Usage: memoid <workspace> <agent> [args...]" -ForegroundColor Cyan
     Write-Host "       memoid ls" -ForegroundColor Cyan
     Write-Host "       memoid new <workspace-name>" -ForegroundColor Cyan
-    Write-Host "       memoid update" -ForegroundColor Cyan
-    Write-Host "       memoid version" -ForegroundColor Cyan
+    Write-Host "       memoid update [workspace-name]" -ForegroundColor Cyan
+    Write-Host "       memoid version [workspace-name]" -ForegroundColor Cyan
     Write-Host "Example: memoid personal claude" -ForegroundColor Gray
 }
 
@@ -54,12 +42,16 @@ if ($WorkspaceName -eq "ls") {
 
 # Handle version command
 if ($WorkspaceName -eq "version") {
-    $EngineDir = if ($env:MEMOID_ENGINE_DIR) { $env:MEMOID_ENGINE_DIR } else { Join-Path $BaseDir "memoid-engine" }
-    if (Test-Path (Join-Path $EngineDir ".git")) {
-        $Version = git -C $EngineDir describe --tags --always
-        Write-Host "Memoid version: $Version"
+    $TargetDir = Get-Location
+    if ($AgentCmd) {
+        $TargetDir = Join-Path $WorkspacesDir $AgentCmd
+    }
+
+    if (Test-Path (Join-Path $TargetDir ".git")) {
+        $Version = git -C $TargetDir describe --tags --always
+        Write-Host "Memoid version ($TargetDir): $Version"
     } else {
-        Write-Host "Memoid version: unknown (engine not found)"
+        Write-Host "Error: Target directory $TargetDir is not a git repository." -ForegroundColor Red
     }
     exit 0
 }
@@ -70,8 +62,8 @@ if ($WorkspaceName -eq "new") {
         Write-Host "Usage: memoid new <workspace-name>" -ForegroundColor Red
         exit 1
     }
-    $EngineDir = if ($env:MEMOID_ENGINE_DIR) { $env:MEMOID_ENGINE_DIR } else { Join-Path $BaseDir "memoid-engine" }
-    $InstallScript = Join-Path $EngineDir "scripts\install.ps1"
+    # Find install.ps1 relative to current script
+    $InstallScript = Join-Path $PSScriptRoot "install.ps1"
     if (Test-Path $InstallScript) {
         & $InstallScript $AgentCmd
     } else {
@@ -83,31 +75,40 @@ if ($WorkspaceName -eq "new") {
 
 # Handle update command
 if ($WorkspaceName -eq "update") {
-    Write-Host "Updating Memoid engine in $EngineDir..." -ForegroundColor Cyan
-    if (Test-Path (Join-Path $EngineDir ".git")) {
-        git -C $EngineDir fetch --tags --prune
-        
-        # Get latest tag
-        $LatestTag = (git -C $EngineDir tag --sort=-v:refname | Select-Object -First 1)
-        
-        if ($null -ne $LatestTag) {
-            Write-Host "Switching to latest tag: $LatestTag"
-            git -C $EngineDir checkout $LatestTag
-        } else {
-            Write-Host "No tags found, pulling latest from main..."
-            git -C $EngineDir pull --ff-only
-        }
-        
-        Write-Host "Memoid engine updated successfully." -ForegroundColor Green
-        
-        # If we are inside a workspace, offer to sync
-        if (Test-Path ".memoid-workspace") {
-            Write-Host "Detected workspace context. Running install script to sync engine changes..." -ForegroundColor Cyan
-            & (Join-Path $EngineDir "scripts\install.ps1")
-        }
-    } else {
-        Write-Error "Error: Engine repository not found at $EngineDir"
+    $TargetDir = Get-Location
+    if ($AgentCmd) {
+        $TargetDir = Join-Path $WorkspacesDir $AgentCmd
+    }
+
+    if (-not (Test-Path (Join-Path $TargetDir ".git"))) {
+        Write-Error "Error: Target directory $TargetDir is not a git repository."
         exit 1
+    }
+
+    Write-Host "Updating Memoid workspace in $TargetDir..." -ForegroundColor Cyan
+    git -C $TargetDir fetch --tags --prune
+    
+    # Get latest tag
+    $LatestTag = (git -C $TargetDir tag --sort=-v:refname | Select-Object -First 1)
+    
+    if ($null -ne $LatestTag) {
+        Write-Host "Switching to latest tag: $LatestTag"
+        git -C $TargetDir checkout $LatestTag
+    } else {
+        Write-Host "No tags found, pulling latest from main..."
+        git -C $TargetDir pull --ff-only
+    }
+    
+    Write-Host "Memoid workspace updated successfully." -ForegroundColor Green
+    
+    if (Test-Path (Join-Path $TargetDir "scripts\post_init_check.py")) {
+        Write-Host "Running post-update check..."
+        Push-Location $TargetDir
+        try {
+            uv run python scripts\post_init_check.py
+        } finally {
+            Pop-Location
+        }
     }
     exit 0
 }
@@ -129,7 +130,6 @@ if (-not (Get-Command $AgentCmd -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
-# The remaining arguments are passed down to the agent command
 $RemainingArgs = $args
 
 Push-Location $WorkspaceDir
