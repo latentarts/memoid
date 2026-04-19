@@ -15,12 +15,12 @@ Audit the repo for drift, inconsistency, and missing structure.
 
 ## Process
 
-1. Start from `wiki/INDEX.md` and `wiki/LOG.md`.
+1. Start from `memory/wiki/INDEX.md` and `memory/wiki/LOG.md`.
 2. Sample the most active wiki pages.
 3. Cross-check linked evidence pages where important claims appear.
 4. Identify inconsistencies, omissions, and maintenance work.
-5. Write findings to `evidence/audits/`.
-6. Add a short summary to `wiki/LOG.md` if the audit was significant.
+5. Write findings to `memory/evidence/audits/`.
+6. Add a short summary to `memory/wiki/LOG.md` if the audit was significant.
 
 ## Rules
 

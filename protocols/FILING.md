@@ -15,11 +15,11 @@ Preserve only durable knowledge and keep the main wiki coherent.
 
 ## Process
 
-1. Update or create a session record under `evidence/sessions/`.
+1. Update or create a session record under `memory/evidence/sessions/`.
 2. Update affected wiki pages.
 3. Update an agent diary if the lesson is specialized.
 4. Update current/history facts when reality changed.
-5. Update `wiki/ESSENTIAL_STORY.md` only if startup context should change.
+5. Update `memory/wiki/ESSENTIAL_STORY.md` only if startup context should change.
 
 ## Avoid Filing
 

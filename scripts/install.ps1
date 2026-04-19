@@ -73,14 +73,14 @@ function Ensure-RuntimeDirs {
     param([string]$WorkspaceDir)
 
     $dirs = @(
-        "raw\articles",
-        "raw\transcripts",
-        "raw\assets",
-        "raw\inbox",
-        "evidence\sessions",
-        "evidence\decisions",
-        "evidence\source-notes",
-        "evidence\audits"
+        "memory\raw\articles",
+        "memory\raw\transcripts",
+        "memory\raw\assets",
+        "memory\raw\inbox",
+        "memory\evidence\sessions",
+        "memory\evidence\decisions",
+        "memory\evidence\source-notes",
+        "memory\evidence\audits"
     )
 
     foreach ($dir in $dirs) {

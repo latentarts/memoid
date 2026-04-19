@@ -19,8 +19,8 @@ from yt_dlp import YoutubeDL
 
 
 ROOT = Path(__file__).resolve().parents[3]
-RAW_ARTICLES = ROOT / "raw" / "articles"
-RAW_TRANSCRIPTS = ROOT / "raw" / "transcripts"
+RAW_ARTICLES = ROOT / "memory" / "raw" / "articles"
+RAW_TRANSCRIPTS = ROOT / "memory" / "raw" / "transcripts"
 
 
 @dataclass

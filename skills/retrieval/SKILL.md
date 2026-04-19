@@ -13,7 +13,7 @@ Use this skill for questions that should be answered from repository memory.
 
 ## Retrieval Ladder
 
-1. `wiki/INDEX.md`
+1. `memory/wiki/INDEX.md`
 2. relevant wiki pages
 3. linked evidence pages
 4. raw sources

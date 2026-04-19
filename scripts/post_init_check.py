@@ -9,15 +9,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 REQUIRED_DIRS = [
-    ROOT / "raw" / "articles",
-    ROOT / "raw" / "transcripts",
-    ROOT / "raw" / "assets",
-    ROOT / "raw" / "inbox",
-    ROOT / "wiki",
-    ROOT / "evidence" / "sessions",
-    ROOT / "evidence" / "decisions",
-    ROOT / "evidence" / "source-notes",
-    ROOT / "evidence" / "audits",
+    ROOT / "memory" / "raw" / "articles",
+    ROOT / "memory" / "raw" / "transcripts",
+    ROOT / "memory" / "raw" / "assets",
+    ROOT / "memory" / "raw" / "inbox",
+    ROOT / "memory" / "wiki",
+    ROOT / "memory" / "evidence" / "sessions",
+    ROOT / "memory" / "evidence" / "decisions",
+    ROOT / "memory" / "evidence" / "source-notes",
+    ROOT / "memory" / "evidence" / "audits",
     ROOT / "skills" / "download-urls" / "scripts",
 ]
 

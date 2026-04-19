@@ -6,7 +6,7 @@ Answer from maintained knowledge first, then drill down only as needed.
 
 ## Retrieval Ladder
 
-1. `wiki/INDEX.md`
+1. `memory/wiki/INDEX.md`
 2. relevant wiki pages
 3. linked evidence pages
 4. raw sources

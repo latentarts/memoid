@@ -13,12 +13,12 @@ Use this skill to audit the health of the memory system.
 
 ## Process
 
-1. Start from `wiki/INDEX.md` and `wiki/LOG.md`.
+1. Start from `memory/wiki/INDEX.md` and `memory/wiki/LOG.md`.
 2. Inspect the most active or highest-value wiki pages.
 3. Cross-check linked evidence where claims matter.
 4. Identify contradictions, stale claims, orphan pages, and missing evidence links.
-5. Write findings to `evidence/audits/`.
-6. Update `wiki/LOG.md` if the audit produced meaningful repo changes.
+5. Write findings to `memory/evidence/audits/`.
+6. Update `memory/wiki/LOG.md` if the audit produced meaningful repo changes.
 
 ## Rules
 

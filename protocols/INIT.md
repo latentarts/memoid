@@ -37,5 +37,5 @@ Initialization is complete when:
 ## Rules
 
 - Run from the repository root.
-- Do not ingest or mutate `raw/` content during init.
+- Do not ingest or mutate `memory/raw/` content during init.
 - If `uv sync` fails because dependencies cannot be downloaded, report that clearly and stop.

@@ -232,7 +232,7 @@ wheels = [
 ]
 
 [[package]]
-name = "memo"
+name = "memoid"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

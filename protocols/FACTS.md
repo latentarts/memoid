@@ -6,7 +6,7 @@ Keep current truth separate from historical truth.
 
 ## Preferred Storage
 
-Store durable facts on entity pages in `wiki/entities/`.
+Store durable facts on entity pages in `memory/wiki/entities/`.
 
 ## Required Sections
 

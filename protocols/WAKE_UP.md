@@ -6,14 +6,14 @@ Reconstruct current state from a very small default context.
 
 ## Required Reads
 
-1. `wiki/IDENTITY.md`
-2. `wiki/ESSENTIAL_STORY.md`
+1. `memory/wiki/IDENTITY.md`
+2. `memory/wiki/ESSENTIAL_STORY.md`
 
 ## Optional Reads
 
 Read only if needed:
 
-- `wiki/INDEX.md`
+- `memory/wiki/INDEX.md`
 - one relevant domain page
 - one relevant agent diary
 

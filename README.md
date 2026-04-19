@@ -11,23 +11,17 @@ It maintains a persistent wiki that compounds over time, adding operational disc
 graph TD
     User([User])
     Agent{AI Agent}
-    Raw[(raw/)]
-    Wiki[(wiki/)]
-    Evidence[(evidence/)]
-    Agents[(agents/)]
+    Memory[(memory/)]
     Protocols{protocols/}
 
     User --> Agent
     Agent --> Protocols
-    Agent --> Raw
-    Agent --> Wiki
-    Agent --> Evidence
-    Agent --> Agents
+    Agent --> Memory
 
-    Raw -- "Immutable Sources" --> Agent
-    Wiki -- "Maintained Synthesis" --> Agent
-    Evidence -- "Chronology & Proof" --> Agent
-    Agents -- "Specialist Continuity" --> Agent
+    Memory -- "Raw Sources" --> Agent
+    Memory -- "Maintained Synthesis" --> Agent
+    Memory -- "Chronology & Proof" --> Agent
+    Memory -- "Specialist Continuity" --> Agent
     Protocols -- "Operating Rules" --> Agent
 ```
 
@@ -42,7 +36,7 @@ If you only need one memory system for one project:
 1. `git clone https://github.com/prods/memoid.git my-project`
 2. `cd my-project && uv sync`
 3. Start your prefered AI agent on the cloned repo path. 
-   *The repo comes pre-configured with a clean `wiki/` and `agents/` structure.*
+   *The repo comes pre-configured with a clean `memory/wiki/` and `memory/agents/` structure.*
 
 ### 2. Managed Workspaces (The "CLI" Model)
 
@@ -65,9 +59,9 @@ graph TD
     CLI -- "new / ls / update" --> WSN
 
     subgraph "Independent Repositories"
-    WS1 --- D1(wiki, raw, evidence)
-    WS2 --- D2(wiki, raw, evidence)
-    WSN --- DN(wiki, raw, evidence)
+    WS1 --- D1(memory/)
+    WS2 --- D2(memory/)
+    WSN --- DN(memory/)
     end
 ```
 
@@ -105,19 +99,20 @@ powershell -ExecutionPolicy Bypass -c "& { $(irm https://raw.githubusercontent.c
 ## Repository Layout
 
 ```text
-raw/        immutable source material
-wiki/       maintained knowledge surface (templates only in repo)
-evidence/   support records and chronology
-agents/     specialist memory streams
-protocols/  operating rules for the agent
+memory/
+  raw/        immutable source material
+  wiki/       maintained knowledge surface (templates only in repo)
+  evidence/   support records and chronology
+  agents/     specialist memory streams
+protocols/    operating rules for the agent
 ```
 
 Key files:
 
-- [wiki/IDENTITY.md](./wiki/IDENTITY.md): who the main agent is and how it should behave
-- [wiki/ESSENTIAL_STORY.md](./wiki/ESSENTIAL_STORY.md): bounded current-state brief
-- [wiki/INDEX.md](./wiki/INDEX.md): main navigation page
-- [wiki/LOG.md](./wiki/LOG.md): chronology of major ingests and changes
+- [memory/wiki/IDENTITY.md](./memory/wiki/IDENTITY.md): who the main agent is and how it should behave
+- [memory/wiki/ESSENTIAL_STORY.md](./memory/wiki/ESSENTIAL_STORY.md): bounded current-state brief
+- [memory/wiki/INDEX.md](./memory/wiki/INDEX.md): main navigation page
+- [memory/wiki/LOG.md](./memory/wiki/LOG.md): chronology of major ingests and changes
 - [protocols/WAKE_UP.md](./protocols/WAKE_UP.md): minimal startup behavior
 - [protocols/RETRIEVAL.md](./protocols/RETRIEVAL.md): how the agent should answer questions
 - [protocols/INGEST.md](./protocols/INGEST.md): how to add new knowledge
@@ -155,15 +150,15 @@ On first use, initialize the repo. **Note: [uv](https://github.com/astral-sh/uv)
 At the beginning of a session, the agent should read only:
 
 - `protocols/WAKE_UP.md`
-- `wiki/IDENTITY.md`
-- `wiki/ESSENTIAL_STORY.md`
+- `memory/wiki/IDENTITY.md`
+- `memory/wiki/ESSENTIAL_STORY.md`
 
 ```mermaid
 graph LR
     Agent{Agent}
     WU[protocols/WAKE_UP.md]
-    ID[wiki/IDENTITY.md]
-    ES[wiki/ESSENTIAL_STORY.md]
+    ID[memory/wiki/IDENTITY.md]
+    ES[memory/wiki/ESSENTIAL_STORY.md]
     
     Agent --> WU
     Agent --> ID
@@ -180,14 +175,14 @@ graph LR
 
 When a question arrives, the agent uses this ladder:
 
-1. `wiki/INDEX.md`
+1. `memory/wiki/INDEX.md`
 2. Relevant wiki pages
 3. Linked evidence pages
 4. Raw sources
 
 ```mermaid
 graph TD
-    Q[Question] --> Index[1. wiki/INDEX.md]
+    Q[Question] --> Index[1. memory/wiki/INDEX.md]
     Index --> Wiki[2. Relevant wiki pages]
     Wiki --> Evidence[3. Linked evidence pages]
     Evidence --> Raw[4. Raw sources]
@@ -204,8 +199,8 @@ graph TD
 
 When adding a new source:
 
-1. Store it under `raw/`
-2. Create a source note under `evidence/source-notes/`
+1. Store it under `memory/raw/`
+2. Create a source note under `memory/evidence/source-notes/`
 3. Update relevant wiki pages and the index/log.
 
 ```mermaid
@@ -216,7 +211,7 @@ sequenceDiagram
     participant Evidence
     participant Wiki
     
-    User->>Raw: Store source in raw/
+    User->>Raw: Store source in memory/raw/
     Agent->>Raw: Read source
     Agent->>Evidence: Create source note
     Agent->>Wiki: Update relevant pages
@@ -228,7 +223,7 @@ sequenceDiagram
 Project-local skills are provided under `skills/`:
 
 - `skills/init/`: Prepare the repo for first use.
-- `skills/download-urls/`: Download URLs/YouTube transcripts into `raw/`.
+- `skills/download-urls/`: Download URLs/YouTube transcripts into `memory/raw/`.
 - `skills/wake-up/`: Initialize from bounded context.
 - `skills/ingest/`: Turn raw sources into wiki knowledge.
 - `skills/retrieval/`: Answer from maintained knowledge first.
@@ -238,9 +233,9 @@ Project-local skills are provided under `skills/`:
 
 ## Best Practices
 
-- **Version Control your Memory**: Your `wiki/` and `agents/` directories are where your knowledge compounds. We highly recommend version controlling these files in your own workspace. This allows you to audit agent changes, revert "hallucinations," and sync your memory across machines.
-  > **Tip**: The default `.gitignore` prevents engine artifacts from being tracked. To track your own knowledge, remove the `/wiki/*` and `/agents/*` ignore rules in your local `.gitignore`.
-- **Keep `raw/` immutable**: Never edit files in `raw/`. They are your "ground truth."
+- **Version Control your Memory**: Your `memory/` directory is where your knowledge compounds. We highly recommend version controlling this entire folder. This allows you to audit agent changes, revert "hallucinations," and sync your memory across machines.
+  > **Tip**: The default `.gitignore` prevents engine artifacts from being tracked. To track your own knowledge, remove the `/memory/*` ignore rules in your local `.gitignore`.
+- **Keep `memory/raw/` immutable**: Never edit files in `memory/raw/`. They are your "ground truth."
 - **Link wiki claims to evidence**: Use citations to point from the wiki back to session or source notes.
 - **Use `Current` and `History` sections**: For facts that change (like project status or entity roles), keep the old data in a `History` section.
 - **Run periodic lint passes**: Use `memoid <workspace> lint` to find orphan pages or contradictions.
@@ -262,4 +257,4 @@ graph LR
 
 - [SPEC.md](./SPEC.md): formal architecture and rationale
 - [protocols/SCHEMA.md](./protocols/SCHEMA.md): page and naming conventions
-- [wiki/INDEX.md](./wiki/INDEX.md): current navigation entry point
+- [memory/wiki/INDEX.md](./memory/wiki/INDEX.md): current navigation entry point

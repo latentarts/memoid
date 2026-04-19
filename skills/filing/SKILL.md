@@ -14,11 +14,11 @@ Use this skill when the current session produced knowledge worth keeping.
 
 ## Process
 
-1. Update or create a session note under `evidence/sessions/`.
+1. Update or create a session note under `memory/evidence/sessions/`.
 2. Update affected canonical wiki pages.
 3. Update agent diaries when the lesson is specialist-specific.
-4. Update fact pages when current reality changed.
-5. Update `wiki/ESSENTIAL_STORY.md` only if startup context should change.
+4. Update fact pages when reality changed.
+5. Update `memory/wiki/ESSENTIAL_STORY.md` only if startup context should change.
 
 ## Rules
 

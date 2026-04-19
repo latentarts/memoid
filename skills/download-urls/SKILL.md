@@ -1,24 +1,24 @@
 ---
 name: download-urls
-description: Download URL content into the raw/ folder so it can be ingested later. Use for web articles, documentation pages, and YouTube URLs. For YouTube URLs, fetch video metadata and save the transcript into raw/transcripts/ when available.
+description: Download URL content into the memory/raw/ folder so it can be ingested later. Use for web articles, documentation pages, and YouTube URLs. For YouTube URLs, fetch video metadata and save the transcript into memory/raw/transcripts/ when available.
 ---
 
 # Download URLs
 
-Use this skill to turn remote URLs into local markdown files under `raw/`.
+Use this skill to turn remote URLs into local markdown files under `memory/raw/`.
 
 ## When To Use
 
 Use when the user wants to:
 
 - download one or more web pages for later ingestion
-- archive article or documentation content into `raw/articles/`
-- fetch YouTube transcripts into `raw/transcripts/`
+- archive article or documentation content into `memory/raw/articles/`
+- fetch YouTube transcripts into `memory/raw/transcripts/`
 
 ## Output Locations
 
-- general web pages -> `raw/articles/`
-- YouTube transcripts -> `raw/transcripts/`
+- general web pages -> `memory/raw/articles/`
+- YouTube transcripts -> `memory/raw/transcripts/`
 
 ## Command
 
@@ -38,7 +38,7 @@ uv run python skills/download-urls/scripts/download_urls.py <url> [<url> ...]
 
 ## Rules
 
-- downloaded material belongs under `raw/` only
+- downloaded material belongs under `memory/raw/` only
 - do not ingest automatically unless explicitly asked
 - after downloading, the next natural step is `ingest new articles` or `ingest new transcripts`
 

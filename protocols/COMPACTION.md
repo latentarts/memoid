@@ -6,7 +6,7 @@ Preserve continuity before context is lost.
 
 ## Required Before Compaction
 
-1. Write or update a session note in `evidence/sessions/`.
+1. Write or update a session note in `memory/evidence/sessions/`.
 2. Capture unresolved items.
 3. Capture decisions and rationale.
 4. Note the wiki pages that need follow-up edits.

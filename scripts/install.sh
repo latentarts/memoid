@@ -72,14 +72,14 @@ prompt_workspace_name() {
 ensure_runtime_dirs() {
   local workspace_dir="$1"
   mkdir -p \
-    "$workspace_dir/raw/articles" \
-    "$workspace_dir/raw/transcripts" \
-    "$workspace_dir/raw/assets" \
-    "$workspace_dir/raw/inbox" \
-    "$workspace_dir/evidence/sessions" \
-    "$workspace_dir/evidence/decisions" \
-    "$workspace_dir/evidence/source-notes" \
-    "$workspace_dir/evidence/audits"
+    "$workspace_dir/memory/raw/articles" \
+    "$workspace_dir/memory/raw/transcripts" \
+    "$workspace_dir/memory/raw/assets" \
+    "$workspace_dir/memory/raw/inbox" \
+    "$workspace_dir/memory/evidence/sessions" \
+    "$workspace_dir/memory/evidence/decisions" \
+    "$workspace_dir/memory/evidence/source-notes" \
+    "$workspace_dir/memory/evidence/audits"
 }
 
 write_workspace_config() {

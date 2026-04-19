@@ -10,9 +10,9 @@ Use this skill to initialize from bounded context instead of reading the whole r
 ## Read Order
 
 1. `protocols/WAKE_UP.md`
-2. `wiki/IDENTITY.md`
-3. `wiki/ESSENTIAL_STORY.md`
-4. `wiki/INDEX.md` only if needed
+2. `memory/wiki/IDENTITY.md`
+3. `memory/wiki/ESSENTIAL_STORY.md`
+4. `memory/wiki/INDEX.md` only if needed
 
 ## Output
 

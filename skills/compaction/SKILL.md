@@ -13,7 +13,7 @@ Use this skill before context is lost.
 
 ## Process
 
-1. Write or update a session note under `evidence/sessions/`.
+1. Write or update a session note under `memory/evidence/sessions/`.
 2. Record unresolved items.
 3. Record decisions and rationale.
 4. Note the pages that need follow-up edits.

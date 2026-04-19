@@ -101,9 +101,9 @@ The hybrid system should adopt:
 
 ## Core Architecture
 
-The system has four layers instead of Karpathy’s minimal three.
+The system has four layers instead of Karpathy’s minimal three, all housed within a single `memory/` directory to ensure portability and ease of version control.
 
-### 1. Raw Sources
+### 1. Raw Sources (`memory/raw/`)
 
 Immutable source material.
 
@@ -120,7 +120,7 @@ Rules:
 - never edited by the agent after ingest
 - always available for evidence checks
 
-### 2. Wiki
+### 2. Wiki (`memory/wiki/`)
 
 The maintained synthesis layer.
 
@@ -140,7 +140,7 @@ Rules:
 - the agent is allowed to create and revise these freely
 - all durable synthesis belongs here
 
-### 3. Evidence Layer
+### 3. Evidence Layer (`memory/evidence/`)
 
 A markdown record of session-level or source-level evidence that backs the wiki.
 
@@ -178,39 +178,33 @@ Rules:
 ## Directory Layout
 
 ```text
-raw/
-  inbox/
-  articles/
-  transcripts/
-  assets/
-
-wiki/
-  INDEX.md
-  LOG.md
-  IDENTITY.md
-  ESSENTIAL_STORY.md
-  OVERVIEW.md
-  entities/
-  concepts/
-  domains/
-  comparisons/
-  syntheses/
-
-evidence/
-  sessions/
-  decisions/
-  source-notes/
-  audits/
-
-agents/
-  reviewer/
+memory/
+  raw/
+    inbox/
+    articles/
+    transcripts/
+    assets/
+  wiki/
+    INDEX.md
+    LOG.md
     IDENTITY.md
-    DIARY.md
-    PATTERNS.md
-  researcher/
-    IDENTITY.md
-    DIARY.md
-
+    ESSENTIAL_STORY.md
+    entities/
+    concepts/
+    domains/
+  evidence/
+    sessions/
+    decisions/
+    source-notes/
+    audits/
+  agents/
+    reviewer/
+      IDENTITY.md
+      DIARY.md
+      PATTERNS.md
+    researcher/
+      IDENTITY.md
+      DIARY.md
 protocols/
   SCHEMA.md
   WAKE_UP.md
@@ -229,8 +223,8 @@ But it should not stand alone.
 
 To make it reliable for an AI agent, the system must distinguish between:
 
-- synthesis pages in `wiki/`
-- evidence records in `evidence/`
+- synthesis pages in `memory/wiki/`
+- evidence records in `memory/evidence/`
 - operating rules in `protocols/`
 
 Without that distinction, the agent risks treating its own evolving summaries as if they were ground truth.
@@ -244,9 +238,9 @@ The agent should not load the whole wiki by default.
 On wake-up it should read only:
 
 1. `protocols/WAKE_UP.md`
-2. `wiki/IDENTITY.md`
-3. `wiki/ESSENTIAL_STORY.md`
-4. optionally `wiki/INDEX.md` or one domain index if relevant
+2. `memory/wiki/IDENTITY.md`
+3. `memory/wiki/ESSENTIAL_STORY.md`
+4. optionally `memory/wiki/INDEX.md` or one domain index if relevant
 
 This preserves MemPalace’s bounded startup behavior.
 
@@ -390,7 +384,7 @@ But it should preserve the MemPalace fact discipline:
 
 Recommended pattern:
 
-- entity pages in `wiki/entities/`
+- entity pages in `memory/wiki/entities/`
 - each page has `Current`, `History`, and `Sources` sections
 
 This is enough to capture most of the value of the MemPalace knowledge graph without introducing a database.
@@ -401,12 +395,12 @@ This is enough to capture most of the value of the MemPalace knowledge graph wit
 
 When a new source is added:
 
-1. store it under `raw/`
+1. store it under `memory/raw/`
 2. read it
-3. create a source note in `evidence/source-notes/`
+3. create a source note in `memory/evidence/source-notes/`
 4. update or create relevant wiki pages
-5. update `wiki/INDEX.md` if needed
-6. append to `wiki/LOG.md`
+5. update `memory/wiki/INDEX.md` if needed
+6. append to `memory/wiki/LOG.md`
 
 Unlike naive RAG, the knowledge should be compiled into the wiki, not rediscovered later from scratch.
 
@@ -458,7 +452,7 @@ Periodic lint passes should check for:
 - unsupported claims
 - high-value topics lacking canonical pages
 
-Results should be written to `evidence/audits/` and optionally summarized in `wiki/LOG.md`.
+Results should be written to `memory/evidence/audits/` and optionally summarized in `memory/wiki/LOG.md`.
 
 ## Skills Required
 
@@ -544,15 +538,15 @@ Mitigation:
 
 V1 should include only:
 
-- `raw/`
-- `wiki/IDENTITY.md`
-- `wiki/ESSENTIAL_STORY.md`
-- `wiki/INDEX.md`
-- `wiki/LOG.md`
+- `memory/raw/`
+- `memory/wiki/IDENTITY.md`
+- `memory/wiki/ESSENTIAL_STORY.md`
+- `memory/wiki/INDEX.md`
+- `memory/wiki/LOG.md`
 - a few canonical page directories
-- `evidence/sessions/`
-- `evidence/decisions/`
-- `agents/<name>/DIARY.md`
+- `memory/evidence/sessions/`
+- `memory/evidence/decisions/`
+- `memory/agents/<name>/DIARY.md`
 - `protocols/` files for wake-up, retrieval, filing, compaction
 
 V1 should not include:

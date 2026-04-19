@@ -6,11 +6,11 @@ This file defines the conventions the agent should follow when creating and main
 
 ## Core Layers
 
-- `raw/`: immutable source files
-- `wiki/`: maintained synthesis and navigation
-- `evidence/`: supporting records and chronology
-- `agents/`: specialist continuity
-- `protocols/`: operating rules
+- `memory/raw/`: immutable source files
+- `memory/wiki/`: maintained synthesis and navigation
+- `memory/evidence/`: supporting records and chronology
+- `memory/agents/`: specialist continuity
+- `memory/protocols/`: operating rules
 
 ## Page Types
 
@@ -45,9 +45,9 @@ These should be more stable and chronological.
 
 Examples:
 
-- `wiki/entities/andrej-karpathy.md`
-- `wiki/concepts/retrieval-discipline.md`
-- `evidence/decisions/2026-04-21-example-decision.md`
+- `memory/wiki/entities/andrej-karpathy.md`
+- `memory/wiki/concepts/retrieval-discipline.md`
+- `memory/evidence/decisions/2026-04-21-example-decision.md`
 
 ## Section Conventions
 
@@ -94,7 +94,7 @@ Examples:
 
 ## Editing Rules
 
-- Do not edit files under `raw/`.
+- Do not edit files under `memory/raw/`.
 - Prefer updating existing canonical pages over creating duplicates.
 - When facts change, move old facts into `History` instead of deleting them silently.
 - When a question produces durable synthesis, file it back into the wiki.
