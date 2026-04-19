@@ -218,6 +218,23 @@ sequenceDiagram
     Agent->>Wiki: Update INDEX.md & LOG.md
 ```
 
+### 4. Codebase Ingestion
+
+When ingesting a local solution or codebase:
+
+1. Provide the filesystem path to the agent.
+2. The agent extracts architecture, project structure, and key flows.
+3. Durable knowledge is filed into `memory/evidence/source-notes/` and `memory/wiki/`.
+
+```mermaid
+graph LR
+    Path[Codebase Path] --> Agent{AI Agent}
+    Agent --> Arch[Extract Architecture]
+    Agent --> Flows[Trace Key Flows]
+    Arch --> Memory[(memory/)]
+    Flows --> Memory
+```
+
 ## Included Skills
 
 Project-local skills are provided under `skills/`:
@@ -226,6 +243,7 @@ Project-local skills are provided under `skills/`:
 - `skills/download-urls/`: Download URLs/YouTube transcripts into `memory/raw/`.
 - `skills/wake-up/`: Initialize from bounded context.
 - `skills/ingest/`: Turn raw sources into wiki knowledge.
+- `skills/ingest-solution-code/`: Ingest a codebase by extracting its architecture and patterns.
 - `skills/retrieval/`: Answer from maintained knowledge first.
 - `skills/filing/`: Preserve durable knowledge from a session.
 - `skills/compaction/`: Write a handoff before context loss.

@@ -470,6 +470,14 @@ Processes a new raw source into:
 - wiki updates
 - index/log updates
 
+### Ingest Solution Code Skill
+
+Processes a local codebase path into:
+
+- architecture and project structure maps
+- key flow and functionality synthesis
+- source notes and wiki updates
+
 ### Retrieval Skill
 
 Finds the smallest relevant set of wiki and evidence pages before answering.
