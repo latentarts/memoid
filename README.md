@@ -276,3 +276,7 @@ graph LR
 - [SPEC.md](./SPEC.md): formal architecture and rationale
 - [protocols/SCHEMA.md](./protocols/SCHEMA.md): page and naming conventions
 - [memory/wiki/INDEX.md](./memory/wiki/INDEX.md): current navigation entry point
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
