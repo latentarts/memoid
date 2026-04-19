@@ -3,7 +3,7 @@
 > [!WARNING]
 > This is experimental and it's being tested.
 
-Memoid is a markdown-first memory system for AI agents.
+Memoid is a markdown-first memory system for AI agents, heavily inspired by Karpathy's LLM Wiki approach and MemPalace.
 
 It is designed for a simple problem: most LLM workflows either keep too little memory or rely on retrieval from raw documents every time. This repo takes a different approach. It maintains a persistent wiki that compounds over time, but adds enough operational discipline that the wiki stays useful as an agent memory layer instead of turning into an ungrounded pile of summaries.
 
