@@ -158,6 +158,24 @@ At the beginning of a session, the agent should read only:
 - `wiki/IDENTITY.md`
 - `wiki/ESSENTIAL_STORY.md`
 
+```mermaid
+graph LR
+    Agent{Agent}
+    WU[protocols/WAKE_UP.md]
+    ID[wiki/IDENTITY.md]
+    ES[wiki/ESSENTIAL_STORY.md]
+    
+    Agent --> WU
+    Agent --> ID
+    Agent --> ES
+    
+    subgraph "Minimal Startup Context"
+    WU
+    ID
+    ES
+    end
+```
+
 ### 2. Retrieval
 
 When a question arrives, the agent uses this ladder:
@@ -167,6 +185,21 @@ When a question arrives, the agent uses this ladder:
 3. Linked evidence pages
 4. Raw sources
 
+```mermaid
+graph TD
+    Q[Question] --> Index[1. wiki/INDEX.md]
+    Index --> Wiki[2. Relevant wiki pages]
+    Wiki --> Evidence[3. Linked evidence pages]
+    Evidence --> Raw[4. Raw sources]
+    
+    subgraph "The Retrieval Ladder"
+    Index
+    Wiki
+    Evidence
+    Raw
+    end
+```
+
 ### 3. Ingest
 
 When adding a new source:
@@ -174,6 +207,21 @@ When adding a new source:
 1. Store it under `raw/`
 2. Create a source note under `evidence/source-notes/`
 3. Update relevant wiki pages and the index/log.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Agent
+    participant Raw
+    participant Evidence
+    participant Wiki
+    
+    User->>Raw: Store source in raw/
+    Agent->>Raw: Read source
+    Agent->>Evidence: Create source note
+    Agent->>Wiki: Update relevant pages
+    Agent->>Wiki: Update INDEX.md & LOG.md
+```
 
 ## Included Skills
 
