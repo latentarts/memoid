@@ -1,38 +1,13 @@
 # Memoid
 
+> [!WARNING]
+> This is experimental and it's being tested.
+
 Memoid is a markdown-first memory system for AI agents.
 
 It is designed for a simple problem: most LLM workflows either keep too little memory or rely on retrieval from raw documents every time. This repo takes a different approach. It maintains a persistent wiki that compounds over time, but adds enough operational discipline that the wiki stays useful as an agent memory layer instead of turning into an ungrounded pile of summaries.
 
 The architecture is defined in [SPEC.md](./SPEC.md). This README is the user guide for Memoid.
-
-## Installation & Upgrades
-
-Memoid uses a "managed engine" model. You keep one central engine repository and create separate knowledge-base workspaces for different projects.
-
-### One-Line Install (Linux/macOS)
-To create a new workspace or update an existing one:
-```bash
-curl -sSL https://raw.githubusercontent.com/prods/memoid/main/scripts/install.sh | bash -s my-workspace
-```
-
-### One-Line Install (Windows PowerShell)
-```powershell
-powershell -ExecutionPolicy Bypass -c "& { $(irm https://raw.githubusercontent.com/prods/memoid/main/scripts/install.ps1) } my-workspace"
-```
-
-### How it works
-- **Initial Setup**: Clones the engine, creates your workspace directory, and seeds it with the required folders and templates.
-- **Upgrades**: Running the command again (or running `bash scripts/install.sh` from inside a workspace) updates the scripts, protocols, and skills while **preserving** your `raw/`, `wiki/`, `evidence/`, and `agents/` data.
-- **CLI Dispatcher**: Automatically symlinks `memoid` into `~/.local/bin/memoid`. This allows you to launch any agent within a workspace using:
-  `memoid <workspace> <agent> [args...]`
-  Example: `memoid personal claude`
-- **New Workspace**: Create a new workspace with `memoid new <name>`.
-- **List Workspaces**: Run `memoid ls` to see all available workspaces.
-- **Updates**: Run `memoid update` to pull the latest engine changes from GitHub (switches to the latest git tag) and sync your current workspace.
-- **Version**: Run `memoid version` to see the current engine version (git tag).
-- **Dependencies**: Requires `git`, `rsync` (Linux/macOS) or `robocopy` (Windows), and [uv](https://github.com/astral-sh/uv).
-
 
 ## What This Is
 
@@ -210,6 +185,46 @@ Key files:
 - [protocols/COMPACTION.md](./protocols/COMPACTION.md): what to preserve before context loss
 - [protocols/FACTS.md](./protocols/FACTS.md): how to handle changing facts
 - [protocols/LINT.md](./protocols/LINT.md): how to audit the repo for drift and missing structure
+
+## Installation & Upgrades
+
+> [!IMPORTANT]
+> This step is optional. The `memoid` script is just a way to simplify updating, creating workspaces, and running the AI agents on them, but the same can be achieved by just cloning the repo in different folders and starting the AI agent on it.
+
+Memoid uses a "managed engine" model. You keep one central engine repository and create separate knowledge-base workspaces for different projects.
+
+### One-Line Install (Linux/macOS)
+
+To create a new workspace or update an existing one:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/prods/memoid/main/scripts/install.sh | bash -s my-workspace
+```
+
+### One-Line Install (Windows PowerShell)
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "& { $(irm https://raw.githubusercontent.com/prods/memoid/main/scripts/install.ps1) } my-workspace"
+```
+
+### How it works
+
+The `memoid` script acts as a CLI dispatcher and workspace manager.
+
+| Command                                | Description                                                                             |
+| -------------------------------------- | --------------------------------------------------------------------------------------- |
+| `memoid <workspace> <agent> [args...]` | Launches any agent within a workspace. Example: `memoid personal claude`                |
+| `memoid new <name>`                    | Creates a new workspace and seeds it with the required folders and templates.           |
+| `memoid ls`                            | List all available workspaces.                                                          |
+| `memoid update`                        | Pulls the latest engine changes and syncs your current workspace while preserving data. |
+| `memoid version`                       | Displays the current engine version (git tag).                                          |
+
+- **Mechanism**: Automatically symlinks `memoid` into `~/.local/bin/memoid` (Linux/macOS) or `memoid.ps1` (Windows) for global access.
+- **Data Preservation**: Upgrades preserve your `raw/`, `wiki/`, `evidence/`, and `agents/` directories.
+- **Developer Mode**: Use `--local` with the install scripts to use the engine from the current directory instead of cloning from GitHub.
+- **Dependencies**: Requires `git`, `rsync` (Linux/macOS) or `robocopy` (Windows), and [uv](https://github.com/astral-sh/uv).
+
+
 
 ## How It Works
 
