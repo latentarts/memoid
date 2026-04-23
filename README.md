@@ -1,9 +1,6 @@
 # Memoid
 
-> [!TIP]
-> **Unified Personal Knowledge Base**: One brain for all your projects.
-
-Memoid is a markdown-first memory system for AI agents. It blends [Karpathy's LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) with high-discipline memory protocols. 
+Memoid is a markdown-first memory system for AI agents that merges [Karpathy's LLM Wiki approach](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) and [MemPalace](https://github.com/MemPalace/mempalace).
 
 It is designed to be your **"Global Second Brain"**—accessible by any AI agent (Claude, Gemini, Cursor, OpenCode) regardless of which project you are currently working on.
 
