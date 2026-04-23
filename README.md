@@ -1,297 +1,208 @@
 # Memoid
 
-> [!WARNING]
-> This is experimental and it's being tested.
+> [!TIP]
+> **Unified Personal Knowledge Base**: One brain for all your projects.
 
-Memoid is a markdown-first memory system for AI agents that merges [Karpathy's LLM Wiki approach](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) and [MemPalace](https://github.com/MemPalace/mempalace).
+Memoid is a markdown-first memory system for AI agents. It blends [Karpathy's LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) with high-discipline memory protocols. 
 
-It maintains a persistent wiki that compounds over time, adding operational discipline to ensure the wiki stays useful as a grounded memory layer instead of an ungrounded pile of summaries.
-
-```mermaid
-graph TD
-    User([User])
-    Agent{AI Agent}
-    Memory[(memory/)]
-    Protocols{protocols/}
-
-    User --> Agent
-    Agent --> Protocols
-    Agent --> Memory
-
-    Memory -- "Raw Sources" --> Agent
-    Memory -- "Maintained Synthesis" --> Agent
-    Memory -- "Chronology & Proof" --> Agent
-    Memory -- "Specialist Continuity" --> Agent
-    Protocols -- "Operating Rules" --> Agent
-```
-
-## Two Ways to Use Memoid
-
-Memoid is designed to be flexible, supporting everything from a single project to a multi-workspace fleet.
-
-### 1. Direct Clone (The "Template" Model)
-
-If you only need one memory system for one project:
-
-1. `git clone https://github.com/prods/memoid.git my-project`
-2. `cd my-project && uv sync`
-3. Start your prefered AI agent on the cloned repo path. 
-   *The repo comes pre-configured with a clean `memory/wiki/` and `memory/agents/` structure.*
-
-### 2. Managed Workspaces (The "CLI" Model)
-
-If you want to manage multiple isolated knowledge bases (workspaces):
-
-1. Run the [One-Line Install](#installation--upgrades) to create your first workspace and install the `memoid` CLI.
-2. Use `memoid new <name>` to create additional workspaces.
-3. Use `memoid ls` to list your workspaces.
-4. Use `memoid <workspace> <agent>` to launch an agent (like `claude` , `codex` or `gemini`) directly inside a specific workspace.
-
-```mermaid
-graph TD
-    CLI[memoid CLI]
-    WS1[Workspace 1]
-    WS2[Workspace 2]
-    WSN[Workspace N]
-
-    CLI -- "new / ls / update" --> WS1
-    CLI -- "new / ls / update" --> WS2
-    CLI -- "new / ls / update" --> WSN
-
-    subgraph "Independent Repositories"
-    WS1 --- D1(memory/)
-    WS2 --- D2(memory/)
-    WSN --- DN(memory/)
-    end
-```
-
-## Installation & Upgrades
-
-> [!IMPORTANT]
-> This step is optional. The `memoid` script is just a way to simplify updating, creating workspaces, and running the AI agents on them, but the same can be achieved by just cloning the repo in different folders and starting the AI agent on it.
-
-### One-Line Install (Linux/macOS)
-
-```bash
-curl -sSL https://raw.githubusercontent.com/prods/memoid/main/scripts/install.sh | bash -s my-workspace
-```
-
-### One-Line Install (Windows PowerShell)
-
-```powershell
-powershell -ExecutionPolicy Bypass -c "& { $(irm https://raw.githubusercontent.com/prods/memoid/main/scripts/install.ps1) } my-workspace"
-```
-
-### CLI Commands
-
-| Command                                | Description                                                         |
-|:-------------------------------------- |:------------------------------------------------------------------- |
-| `memoid <workspace> <agent> [args...]` | Launches any agent within a workspace.                              |
-| `memoid new <name>`                    | Creates a new isolated workspace by cloning the repo.               |
-| `memoid ls`                            | List all available workspaces.                                      |
-| `memoid update [name]`                 | Pulls the latest changes for a workspace (defaults to current dir). |
-| `memoid version [name]`                | Displays the version of a workspace (defaults to current dir).      |
-
-- **Mechanism**: Automatically symlinks `memoid` into `~/.local/bin/memoid` (Linux/macOS) or `memoid.ps1` (Windows) for global access.
-- **Developer Mode**: Use `--local` with the install scripts to clone from your local engine copy instead of GitHub.
-- **Dependencies**: Requires `git` and [uv](https://github.com/astral-sh/uv) (required to support Python-based skills).
-
-## Repository Layout
-
-```text
-memory/
-  raw/        immutable source material
-  wiki/       maintained knowledge surface (templates only in repo)
-  evidence/   support records and chronology
-  agents/     specialist memory streams
-protocols/    operating rules for the agent
-```
-
-Key files:
-
-- [memory/wiki/IDENTITY.md](./memory/wiki/IDENTITY.md): who the main agent is and how it should behave
-- [memory/wiki/ESSENTIAL_STORY.md](./memory/wiki/ESSENTIAL_STORY.md): bounded current-state brief
-- [memory/wiki/INDEX.md](./memory/wiki/INDEX.md): main navigation page
-- [memory/wiki/LOG.md](./memory/wiki/LOG.md): chronology of major ingests and changes
-- [protocols/WAKE_UP.md](./protocols/WAKE_UP.md): minimal startup behavior
-- [protocols/RETRIEVAL.md](./protocols/RETRIEVAL.md): how the agent should answer questions
-- [protocols/INGEST.md](./protocols/INGEST.md): how to add new knowledge
-- [protocols/FILING.md](./protocols/FILING.md): what deserves persistence
-- [protocols/COMPACTION.md](./protocols/COMPACTION.md): what to preserve before context loss
-
-## Why This Exists
-
-This repository exists to bring MemPalace-style discipline into the Karpathy wiki approach.
-
-Karpathy's pattern is the architectural foundation: use immutable raw sources plus a maintained markdown wiki so knowledge compounds over time instead of being rediscovered from scratch on every query.
-
-MemPalace contributes the discipline layer:
-
-- bounded wake-up context
-- layered retrieval
-- evidence preservation
-- compaction and filing discipline
-- specialist continuity
-- current-vs-history fact handling
-
-The result is a memory system that compounds instead of resetting.
-
-## Automated AI Orchestration
-
-Memoid is designed to be "self-starting" when used with a compatible AI agent (like Claude Code or Gemini CLI). 
-
-When you open an agent on a Memoid workspace, the agent is instructed to automatically:
-1. **Verify Initialization**: Check if the environment and knowledge base are ready.
-2. **Auto-Initialize**: Run `uv sync` and `post_init_check.py` if needed.
-3. **Wake-Up**: Read core identity and status files to reconstruct the current state.
-
-This means you can usually just start your agent and begin working immediately.
+It is designed to be your **"Global Second Brain"**—accessible by any AI agent (Claude, Gemini, Cursor, OpenCode) regardless of which project you are currently working on.
 
 ---
 
-## How It Works (Manual Steps)
+## 🧠 Philosophy & Rationale
 
-While orchestration is automated for agents, you can still perform these operations manually if needed.
+Memoid was built to solve the "Agentic Amnesia" problem. While most RAG (Retrieval-Augmented Generation) systems treat memory as a hidden vector database, Memoid treats memory as a **transparent, human-readable wiki**.
 
-### 0. Initialization
+### The Hybrid Advantage
+By combining **Karpathy’s LLM Wiki** and **MemPalace**, Memoid offers:
+- **Compounding Synthesis**: Knowledge isn't just "found"; it is compiled. The more you work, the more the Wiki improves.
+- **Operational Discipline**: Explicit protocols (Wake-Up, Ingest, Filing) prevent the "pile of summaries" problem found in unmanaged wikis.
+- **Evidence-Backed**: Every wiki claim is linked to an immutable raw source or a session record, ensuring you can always audit *why* the AI remembers something.
+- **Zero Lock-in**: Your memory is just Markdown and Git. You can browse it in Obsidian, edit it in VS Code, or version control it like code.
 
-Prepare the repo for first use. **Note: [uv](https://github.com/astral-sh/uv) is required to manage the environment and support Python-based skills.**
+### Feature Comparison
 
-1. `uv sync`
-2. `uv run python scripts/post_init_check.py`
+| Feature | Karpathy Wiki | MemPalace | Memoid (Hybrid) |
+| :--- | :---: | :---: | :---: |
+| **Markdown-First** | ✅ | ❌ | ✅ |
+| **Git-Native** | ✅ | ❌ | ✅ |
+| **Immutable Raw Sources** | ✅ | ✅ | ✅ |
+| **Maintained Wiki Synthesis** | ✅ | ❌ | ✅ |
+| **Evidence & Session Records** | ❌ | ✅ | ✅ |
+| **Specialist Agent Continuity** | ❌ | ✅ | ✅ |
+| **Bounded Wake-Up Context** | ❌ | ✅ | ✅ |
+| **Explicit Operating Protocols** | ⚠️ | ✅ | ✅ |
+| **MCP / Global Tool Access** | ❌ | ❌ | ✅ |
+| **Low Tooling Complexity** | ✅ | ❌ | ✅ |
 
-### 1. Wake-Up
+### Feature Glossary
 
-At the beginning of a session, reconstruct the state by reading:
+- **Markdown-First**: Knowledge is stored in human-readable `.md` files, making it easy to browse in Obsidian, VS Code, or a terminal.
+- **Git-Native**: Uses standard Git for version control. **Note**: The `memory/` folder is excluded from the core Memoid engine repo by default, allowing you to initialize it as its own independent Git repository for private, versioned knowledge.
+- **Immutable Raw Sources**: Original documents (articles, transcripts) are never edited, serving as the permanent "ground truth" to back up wiki claims.
+- **Maintained Wiki Synthesis**: Instead of just searching documents, the agent compiles and improves high-level "Entity" and "Concept" pages over time.
+- **Evidence & Session Records**: A durable trail of session logs and source notes that explains exactly *how* and *why* a piece of knowledge was added.
+- **Specialist Agent Continuity**: Persistent diaries for specialized agent roles (Researcher, Reviewer), allowing them to learn and improve their habits over time.
+- **Bounded Wake-Up Context**: A "minimalist" startup protocol that prevents the agent from being overwhelmed by too much data at the start of a session.
+- **Explicit Operating Protocols**: Clear Markdown instructions (`protocols/`) that define the agent's behavior, ensuring consistent ingestion and retrieval.
+- **MCP / Global Tool Access**: Integration via Model Context Protocol, allowing any agent to access your brain from a different project's directory.
+- **Low Tooling Complexity**: No specialized databases or vector stores required; if you can edit a text file, you can maintain Memoid.
 
-- `memory/wiki/IDENTITY.md`
-- `memory/wiki/ESSENTIAL_STORY.md`
-- `AGENTS.md`
+### ⚠️ Limitations
+- **Not a Vector DB**: It relies on text search and agent-led navigation. It is optimized for quality and context, not for millisecond-latency searches over millions of documents.
+- **Agent Effort**: It requires the AI to perform "work" (following protocols) to maintain the memory. It is a system for high-quality synthesis, not low-effort data dumping.
+- **Git Discipline**: To keep your memory synced across machines, you must manage your own Git pushes/pulls.
+
+---
+
+## 🏗️ Architecture
+
+Memoid is 100% transparent. No databases, just interlinked Markdown files.
+
+- **`memory/`**: The Data. Your compounding knowledge base (Raw sources, Wiki, Evidence).
+- **`protocols/`**: The Rules. Markdown instructions that tell the AI how to Ingest, Retrieve, and File.
+- **`scripts/`**: The Tools. A lean CLI for maintenance and an MCP server for global connectivity.
+
+---
+
+## 🚀 Quick Start
+
+### 1. Unified Installation (Recommended)
+
+Run the one-line installer to clone, initialize, and automatically configure your AI agents (Claude, OpenCode, etc.) with the Memoid MCP.
+
+**Linux / macOS:**
+```bash
+curl -sSL https://raw.githubusercontent.com/prods/memoid/main/scripts/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/prods/memoid/main/scripts/install.ps1 | iex"
+```
+
+*The installer will ask for your preferred path, install `uv` if missing, and offer to back up and update your AI agent configurations to include the Memoid MCP server.*
+
+---
+
+### 2. Manual Setup (Alternative)
+If you prefer to do it yourself:
+1. **Clone**: `git clone https://github.com/prods/memoid.git ~/memoid`
+2. **Initialize**: `cd ~/memoid && ./scripts/memoid init`
+3. **Update**: Keep your brain up to date with `./scripts/memoid update`
+4. **Direct Access (Local)**: To work **inside** your knowledge base repo (e.g., to reorganize the wiki), run: `memoid gemini`
+5. **Global Access (Cross-Project)**: Set up the [MCP Server](#integrations) in your agent's config.
+
+---
+
+## 💡 Usage Examples
+
+### Case A: Working in another project (via MCP)
+*Scenario: You are in `~/projects/my-app` and need help.*
+
+**Prompt:** "Search my Memoid for that OAuth2 pattern we used last month."
+> **AI Action:** Calls `memoid_recall` to find the code in your brain.
+
+**Prompt:** "Document this bug fix in my Memoid."
+> **AI Action:** Calls `memoid_ingest` to save the logic into your brain's `raw/` and `evidence/` folders.
+
+### Case B: Maintaining your Brain (Direct CLI)
+*Scenario: You are in `~/memoid` and want to clean up.*
+
+**Prompt:** "Audit the wiki for any contradictions and update the Index."
+> **AI Action:** Follows `protocols/LINT.md` to check consistency.
+
+---
+
+## 🛠️ CLI Commands
+
+| Command | Description |
+| :--- | :--- |
+| `memoid init` | Prepares the directory structure. Safe to run multiple times; it will not delete existing data. |
+| `memoid update` | Updates the engine and protocols. **Never** overwrites your knowledge base (`memory/` folder). |
+| `memoid <agent>` | Launches an agent (e.g., `gemini`, `claude`) inside the brain. Shortcut for running the agent in the `~/memoid` folder. |
+| `memoid version` | Displays the current version. |
+
+---
+
+## 🔄 Core Workflows
+
+Memoid is governed by simple, repeatable workflows. Here is how the AI interacts with your files.
+
+### 1. Wake-Up (Context Reconstruction)
+When you start a session, the AI doesn't read the whole wiki. It follows a "minimalist" sequence to understand who it is and what you are working on.
 
 ```mermaid
 graph LR
-    Agent{Agent}
-    WU[protocols/WAKE_UP.md]
-    ID[memory/wiki/IDENTITY.md]
-    ES[memory/wiki/ESSENTIAL_STORY.md]
-    
-    Agent --> WU
-    Agent --> ID
-    Agent --> ES
-    
-    subgraph "Minimal Startup Context"
-    WU
-    ID
-    ES
-    end
+    A[Agent] --> B[protocols/WAKE_UP.md]
+    B --> C[memory/wiki/IDENTITY.md]
+    C --> D[memory/wiki/ESSENTIAL_STORY.md]
+    D --> E[Reconstructed Context]
 ```
+1. **`WAKE_UP.md`**: The AI reads its "bootstrap" instructions.
+2. **`IDENTITY.md`**: It learns its role and your personal preferences.
+3. **`ESSENTIAL_STORY.md`**: It gets up to speed on active projects and recent changes.
 
-### 2. Retrieval
-
-When a question arrives, the agent uses this ladder:
-
-1. `memory/wiki/INDEX.md`
-2. Relevant wiki pages
-3. Linked evidence pages
-4. Raw sources
+### 2. Search (The Retrieval Ladder)
+To provide accurate, grounded answers, the AI climbs a "ladder" from high-level summaries down to the raw ground truth.
 
 ```mermaid
 graph TD
-    Q[Question] --> Index[1. memory/wiki/INDEX.md]
-    Index --> Wiki[2. Relevant wiki pages]
-    Wiki --> Evidence[3. Linked evidence pages]
-    Evidence --> Raw[4. Raw sources]
-    
-    subgraph "The Retrieval Ladder"
-    Index
-    Wiki
-    Evidence
-    Raw
-    end
+    Q[Question] --> L1[1. memory/wiki/INDEX.md]
+    L1 --> L2[2. Relevant Wiki Pages]
+    L2 --> L3[3. Evidence Source Notes]
+    L3 --> L4[4. Raw Source Files]
 ```
+1. **Index**: Finds which pages might have the answer.
+2. **Wiki**: Reads the compiled synthesis for a quick, high-quality answer.
+3. **Evidence**: Checks the source notes to verify the "how" and "when."
+4. **Raw**: Consults the original immutable document if absolute precision is required.
 
-### 3. Ingest
-
-When adding a new source:
-
-1. Store it under `memory/raw/`
-2. Create a source note under `memory/evidence/source-notes/`
-3. Update relevant wiki pages and the index/log.
+### 3. Ingest (The Knowledge Pipeline)
+When you add new information, the AI follows a strict pipeline to ensure the knowledge is synthesized and logged, not just dumped.
 
 ```mermaid
 sequenceDiagram
-    participant User
-    participant Agent
-    participant Raw
-    participant Evidence
-    participant Wiki
+    participant R as Raw Source
+    participant E as Evidence Note
+    participant W as Wiki Pages
+    participant L as LOG.md
     
-    User->>Raw: Store source in memory/raw/
-    Agent->>Raw: Read source
-    Agent->>Evidence: Create source note
-    Agent->>Wiki: Update relevant pages
-    Agent->>Wiki: Update INDEX.md & LOG.md
+    Note over R: 1. Store original file
+    R->>E: 2. Extract metadata & summary
+    E->>W: 3. Update or create concept pages
+    W->>L: 4. Record the change
 ```
+1. **Raw**: The original file is stored permanently in `memory/raw/`.
+2. **Evidence**: A "Source Note" is created in `memory/evidence/source-notes/` to preserve provenance.
+3. **Wiki**: The AI updates one or more canonical pages in `memory/wiki/` with the new insights.
+4. **Log**: The action is recorded in `memory/wiki/LOG.md` for a clear audit trail.
 
-### 4. Codebase Ingestion
-
-When ingesting a local solution or codebase:
-
-1. Provide the filesystem path to the agent.
-2. The agent extracts architecture, project structure, and key flows.
-3. Durable knowledge is filed into `memory/evidence/source-notes/` and `memory/wiki/`.
+### 4. Audit (Consistency & Health)
+To prevent drift and contradictions, the system undergoes regular audits to maintain the integrity of the second brain.
 
 ```mermaid
 graph LR
-    Path[Codebase Path] --> Agent{AI Agent}
-    Agent --> Arch[Extract Architecture]
-    Agent --> Flows[Trace Key Flows]
-    Arch --> Memory[(memory/)]
-    Flows --> Memory
+    A[memory/wiki/LOG.md] --> B[Sample Active Pages]
+    B --> C[memory/evidence/audits/]
+    C --> D[System Health Report]
 ```
+1. **Review**: Sample recent logs and active pages to identify drift or missing structure.
+2. **Cross-Check**: Verify that wiki claims still align with their evidence notes.
+3. **Log Findings**: Record maintenance tasks and inconsistencies in `memory/evidence/audits/`.
+4. **Prune**: Move stale information to `History` sections to keep current pages focused.
 
-## Included Skills
+---
 
-Project-local skills are provided under `skills/`:
+## 📖 Key Protocols
+Memoid doesn't use complex code for logic; it uses Markdown instructions in the `protocols/` folder:
+- **`INGEST.md`**: How to turn a source into a Wiki page.
+- **`RETRIEVAL.md`**: How to find the most accurate answer.
+- **`FILING.md`**: What deserves to be saved permanently.
+- **`LINT.md`**: How to perform consistency audits.
+- **`WAKE_UP.md`**: How the agent reconstructs its context at the start of a session.
 
-- `skills/init/`: Prepare the repo for first use.
-- `skills/download-urls/`: Download URLs/YouTube transcripts into `memory/raw/`.
-- `skills/wake-up/`: Initialize from bounded context.
-- `skills/ingest/`: Turn raw sources into wiki knowledge.
-- `skills/ingest-solution-code/`: Ingest a codebase by extracting its architecture and patterns.
-- `skills/retrieval/`: Answer from maintained knowledge first.
-- `skills/filing/`: Preserve durable knowledge from a session.
-- `skills/compaction/`: Write a handoff before context loss.
-- `skills/lint/`: Audit the repo for drift and missing structure.
+---
 
-## Best Practices
-
-- **Version Control your Memory**: Your `memory/` directory is where your knowledge compounds. We highly recommend version controlling this entire folder. This allows you to audit agent changes, revert "hallucinations," and sync your memory across machines.
-  > **Tip**: The default `.gitignore` prevents engine artifacts from being tracked. To track your own knowledge, remove the `/memory/*` ignore rules in your local `.gitignore`.
-- **Keep `memory/raw/` immutable**: Never edit files in `memory/raw/`. They are your "ground truth."
-- **Link wiki claims to evidence**: Use citations to point from the wiki back to session or source notes.
-- **Use `Current` and `History` sections**: For facts that change (like project status or entity roles), keep the old data in a `History` section.
-- **Run periodic lint passes**: Use `memoid <workspace> lint` to find orphan pages or contradictions.
-
-```mermaid
-graph LR
-    Agent[Agent Updates Wiki] --> Commit[User Reviews & Commits]
-    Commit --> Truth[Durable Knowledge]
-    Truth --> Agent
-    
-    subgraph "Knowledge Audit Loop"
-    Agent
-    Commit
-    Truth
-    end
-```
-
-## Related Files
-
-- [SPEC.md](./SPEC.md): formal architecture and rationale
-- [protocols/SCHEMA.md](./protocols/SCHEMA.md): page and naming conventions
-- [memory/wiki/INDEX.md](./memory/wiki/INDEX.md): current navigation entry point
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 📜 License
+MIT - Created by [prods](https://github.com/prods)

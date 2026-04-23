@@ -21,3 +21,4 @@ You must complete this sequence before answering any user query or performing an
 - Use Python 3.13 (`uv run`).
 - Prefer `ls` and `cat` for directory/file exploration during Research.
 - When updating the Wiki, ensure `INDEX.md` and `LOG.md` are kept in sync.
+- **Scaling**: Delegate batch tasks to sub-agents as described in `AGENTS.md`.

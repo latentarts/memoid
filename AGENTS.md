@@ -12,23 +12,27 @@ To ensure the workspace is ready, the Orchestrator **must** execute this sequenc
 
 1. **Pre-flight Check**: Check if `memory/wiki/IDENTITY.md` exists.
 2. **Conditional Initialization**: If the file is missing or the `memory/` directory is empty:
-   - Run `uv sync`
-   - Run `uv run python scripts/post_init_check.py`
+   - Run `memoid init` (or `uv run python scripts/post_init_check.py`).
 3. **Wake-Up Protocol**: Once initialized, read the core state:
    - `memory/wiki/IDENTITY.md`
    - `memory/wiki/ESSENTIAL_STORY.md`
    - `AGENTS.md` (This file)
 
-*Note: Do not preload the entire wiki. These three files provide the necessary "seed" context to then use the Retrieval Skill effectively.*
+*Note: Do not preload the entire wiki. These three files provide the necessary "seed" context to then use the Retrieval Protocol effectively.*
 
 ### The Work Lifecycle
-...
-1. **Research**: Use `mcp_cocoindex-code_search` or `grep` to find existing knowledge.
-2. **Execute**: Follow the relevant **Skill** (`skills/`) based on the **Protocol** (`protocols/`).
-3. **Persist**: 
+
+1. **Research**: Use `mcp_cocoindex-code_search`, the Memoid MCP, or `grep` to find existing knowledge.
+2. **Execute**: Follow the relevant **Protocol** in `protocols/`.
+3. **Audit**: Run the `LINT.md` protocol to ensure consistency, especially after significant changes.
+4. **Persist**: 
    - **Decisions** → `memory/evidence/decisions/`
    - **Knowledge** → `memory/wiki/` (Update entity/concept pages + `INDEX.md` + `LOG.md`)
    - **Lessons** → Agent Diaries in `memory/agents/`
+
+### Operational Strategies
+- **Scaling**: For high-volume or batch tasks (e.g., mass-ingesting 10+ sources, repo-wide consistency audits), delegate to a `generalist` or specialized sub-agent to preserve the main orchestrator's context.
+- **Verification**: Always run `scripts/post_init_check.py` after modifying the core repository structure or protocols.
 
 ---
 
@@ -49,16 +53,19 @@ Each specialized agent maintains a `DIARY.md`. This is for **meta-learning**, no
 
 ---
 
-## 3. Protocols vs. Skills
+## 3. Protocols
 
-| Protocol (`protocols/`) | Skill (`skills/`) | Goal |
-| --- | --- | --- |
-| `WAKE_UP.md` | `wake-up` | Bounded context state reconstruction. |
-| `INGEST.md` | `ingest` | Raw → Evidence → Wiki pipeline. |
-| `RETRIEVAL.md` | `retrieval` | Efficient, grounded answer discovery. |
-| `FILING.md` | `filing` | Saving session work into durable memory. |
-| `COMPACTION.md` | `compaction` | Handoff generation for the next session. |
-| `LINT.md` | `lint` | System health and consistency check. |
+| Protocol (`protocols/`) | Goal |
+| --- | --- |
+| `WAKE_UP.md` | Bounded context state reconstruction. |
+| `INGEST.md` | Raw → Evidence → Wiki pipeline. |
+| `RETRIEVAL.md` | Efficient, grounded answer discovery. |
+| `FILING.md` | Saving session work into durable memory. |
+| `COMPACTION.md` | Handoff generation for the next session. |
+| `LINT.md` | System health and consistency check. |
+| `INIT.md` | Prepare the repo for first use. |
+
+*Note: Operational logic lives in the Protocols. The agent is responsible for executing these steps using its available tools (Native tools or the Memoid MCP).*
 
 ---
 

@@ -6,11 +6,11 @@ Preserve continuity before context is lost.
 
 ## Required Before Compaction
 
-1. Write or update a session note in `memory/evidence/sessions/`.
-2. Capture unresolved items.
-3. Capture decisions and rationale.
-4. Note the wiki pages that need follow-up edits.
-5. Update the relevant agent diary if applicable.
+1. **Verify**: Perform a quick `LINT.md` check to ensure the session's work is coherent and properly linked.
+2. **Document**: Write or update a session note in `memory/evidence/sessions/`.
+3. **Capture**: Note unresolved items, decisions, and rationale.
+4. **Follow-up**: Note the wiki pages that need future edits.
+5. **Learn**: Update the relevant agent diary.
 
 ## Rules
 
