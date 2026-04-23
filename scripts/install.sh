@@ -4,7 +4,7 @@ set -euo pipefail
 # Memoid Ultimate Installer
 # Handles: cloning, uv setup, init, and automatic MCP configuration for agents.
 
-REPO_URL="https://github.com/prods/memoid.git"
+REPO_URL="https://github.com/latentarts/memoid.git"
 
 # Utility: Print in color
 printf_color() {
@@ -72,7 +72,7 @@ update_mcp_config() {
     local name="memoid"
     local command="uv"
     local dir=$INSTALL_PATH
-    
+
     # Create backup
     cp "$config_file" "${config_file}.bak"
     info "Created backup: ${config_file}.bak"

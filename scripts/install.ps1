@@ -1,7 +1,7 @@
 # Memoid Ultimate Installer for Windows
 # Handles: cloning, uv setup, init, and automatic MCP configuration.
 
-$RepoUrl = "https://github.com/prods/memoid.git"
+$RepoUrl = "https://github.com/latentarts/memoid.git"
 
 function Write-Info ($msg) { Write-Host "INFO: $msg" -ForegroundColor Blue }
 function Write-Success ($msg) { Write-Host "SUCCESS: $msg" -ForegroundColor Green }
@@ -62,12 +62,12 @@ function Update-McpConfig ($ConfigFile) {
 
     $Config = Get-Content $ConfigFile | ConvertFrom-Json
     if (-not $Config.mcpServers) { $Config | Add-Member -MemberType NoteProperty -Name "mcpServers" -Value @{} }
-    
+
     $McpEntry = @{
         command = "uv"
         args = @("--directory", $InstallPath, "run", "scripts/mcp_server.py")
     }
-    
+
     if ($Config.mcpServers.PSObject.Properties.Name -contains "memoid") {
         $Config.mcpServers.memoid = $McpEntry
     } else {

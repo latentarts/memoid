@@ -91,7 +91,7 @@ powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/pro
 
 If you prefer to do it yourself:
 
-1. **Clone**: `git clone https://github.com/prods/memoid.git ~/memoid`
+1. **Clone**: `git clone https://github.com/latentarts/memoid.git ~/memoid`
 2. **Initialize**: `cd ~/memoid && ./scripts/memoid init`
 3. **Update**: Keep your brain up to date with `./scripts/memoid update`
 4. **Direct Access (Local)**: To work **inside** your knowledge base repo (e.g., to reorganize the wiki), run: `memoid gemini`
@@ -225,4 +225,4 @@ Memoid doesn't use complex code for logic; it uses Markdown instructions in the 
 
 ## 📜 License
 
-MIT - Created by [prods](https://github.com/prods)
+MIT - Created by [prods](https://github.com/latentarts)
