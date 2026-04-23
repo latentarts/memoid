@@ -1,150 +1,109 @@
-[CmdletBinding()]
-param(
-    [Parameter(Position=0)]
-    [string]$WorkspaceArg,
+# Memoid Ultimate Installer for Windows
+# Handles: cloning, uv setup, init, and automatic MCP configuration.
 
-    [switch]$Local
-)
+$RepoUrl = "https://github.com/prods/memoid.git"
 
-$ErrorActionPreference = "Stop"
+function Write-Info ($msg) { Write-Host "INFO: $msg" -ForegroundColor Blue }
+function Write-Success ($msg) { Write-Host "SUCCESS: $msg" -ForegroundColor Green }
+function Write-Warn ($msg) { Write-Host "WARN: $msg" -ForegroundColor Yellow }
+function Write-Error ($msg) { Write-Host "ERROR: $msg" -ForegroundColor Red }
 
-$RepoUrl = if ($env:MEMOID_REPO_URL) { $env:MEMOID_REPO_URL } else { "https://github.com/prods/memoid.git" }
-$DocumentsDir = [Environment]::GetFolderPath("MyDocuments")
-$BaseDir = if ($env:MEMOID_BASE_DIR) { $env:MEMOID_BASE_DIR } else { Join-Path $DocumentsDir "memoid" }
-$WorkspacesDir = if ($env:MEMOID_WORKSPACES_DIR) { $env:MEMOID_WORKSPACES_DIR } else { Join-Path $BaseDir "workspaces" }
+# 1. Path Selection
+$DefaultPath = Join-Path $HOME "memoid"
+$InstallPath = Read-Host "Where would you like to install Memoid? [default: $DefaultPath]"
+if (-not $InstallPath) { $InstallPath = $DefaultPath }
 
-function Require-Command {
-    param([string]$Name)
-
-    if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
-        if ($Name -eq "uv") {
-            Write-Host "uv is required for the Memoid runtime environment." -ForegroundColor Cyan
-            $Choice = Read-Host "Would you like to install it now? [y/N]"
-            if ($Choice -match "^[Yy]$") {
-                Write-Host "Installing uv via astral.sh..." -ForegroundColor Cyan
-                powershell -ExecutionPolicy Bypass -c "irm https://astral.sh/uv/install.ps1 | iex"
-                if (-not (Get-Command "uv" -ErrorAction SilentlyContinue)) {
-                    Write-Error "uv installation failed or is not in PATH. Please restart your shell and try again."
-                    exit 1
-                }
-                return
-            }
-        }
-        Write-Host "Missing required command: $Name" -ForegroundColor Red
-        exit 1
-    }
+if (Test-Path $InstallPath) {
+    Write-Error "Directory $InstallPath already exists. Please remove it or choose a different path."
+    exit 1
 }
 
-function Detect-Workspace {
-    if (Test-Path ".memoid-workspace") {
-        $config = Get-Content ".memoid-workspace" | ConvertFrom-StringData
-        if ($config.WORKSPACE_NAME) {
-            return @{
-                Name = $config.WORKSPACE_NAME
-                Dir  = Get-Location
-            }
-        }
-    }
-    return $null
-}
-
-function Prompt-WorkspaceName {
-    param([string]$PassedName)
-
-    if (-not [string]::IsNullOrWhiteSpace($PassedName)) {
-        return $PassedName.Trim()
-    }
-
-    while ($true) {
-        $name = (Read-Host "Workspace name").Trim()
-        if ([string]::IsNullOrWhiteSpace($name)) {
-            Write-Host "Workspace name cannot be empty" -ForegroundColor Yellow
-            continue
-        }
-        if ($name.Contains("\") -or $name.Contains("/")) {
-            Write-Host "Workspace name cannot contain path separators" -ForegroundColor Yellow
-            continue
-        }
-        return $name
-    }
-}
-
-function Ensure-RuntimeDirs {
-    param([string]$WorkspaceDir)
-
-    $dirs = @(
-        "memory\raw\articles",
-        "memory\raw\transcripts",
-        "memory\raw\assets",
-        "memory\raw\inbox",
-        "memory\evidence\sessions",
-        "memory\evidence\decisions",
-        "memory\evidence\source-notes",
-        "memory\evidence\audits"
-    )
-
-    foreach ($dir in $dirs) {
-        New-Item -ItemType Directory -Force -Path (Join-Path $WorkspaceDir $dir) | Out-Null
-    }
-}
-
-function Write-WorkspaceConfig {
-    param(
-        [string]$WorkspaceDir,
-        [string]$WorkspaceName
-    )
-
-    $content = @(
-        "REPO_URL=$RepoUrl"
-        "WORKSPACE_NAME=$WorkspaceName"
-    )
-    Set-Content -Path (Join-Path $WorkspaceDir ".memoid-workspace") -Value $content
-}
-
-Require-Command git
-Require-Command uv
-
-$existing = Detect-Workspace
-if ($null -ne $existing) {
-    Write-Host "Detected existing workspace: $($existing.Name)"
-    $WorkspaceName = $existing.Name
-    $WorkspaceDir = $existing.Dir
-} else {
-    New-Item -ItemType Directory -Force -Path $WorkspacesDir | Out-Null
-    $WorkspaceName = Prompt-WorkspaceName -PassedName $WorkspaceArg
-    $WorkspaceDir = Join-Path $WorkspacesDir $WorkspaceName
-    
-    if (Test-Path $WorkspaceDir) {
-        Write-Error "Error: Workspace directory $WorkspaceDir already exists."
-        exit 1
-    }
-
-    if ($Local) {
-        $CurrentRepoRoot = Split-Path -Parent $PSScriptRoot
-        Write-Host "Local mode: cloning from $CurrentRepoRoot"
-        git clone $CurrentRepoRoot $WorkspaceDir
+# 2. UV Check/Install
+if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
+    Write-Warn "uv (Python manager) not found."
+    $InstallUv = Read-Host "Would you like to install uv now? [Y/n]"
+    if ($InstallUv -notmatch "^[Nn]") {
+        Write-Info "Installing uv..."
+        powershell -ExecutionPolicy Bypass -c "irm https://astral.sh/uv/install.ps1 | iex"
+        # Refresh path
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","User") + ";" + [System.Environment]::GetEnvironmentVariable("Path","Machine")
     } else {
-        Write-Host "Cloning Memoid from $RepoUrl into $WorkspaceDir"
-        git clone $RepoUrl $WorkspaceDir
+        Write-Error "uv is required for Memoid. Please install it and run this script again."
+        exit 1
     }
 }
 
-Ensure-RuntimeDirs -WorkspaceDir $WorkspaceDir
-Write-WorkspaceConfig -WorkspaceDir $WorkspaceDir -WorkspaceName $WorkspaceName
+# 3. Clone and Init
+Write-Info "Cloning Memoid into $InstallPath..."
+git clone $RepoUrl $InstallPath
+Set-Location $InstallPath
 
-# Install memoid CLI dispatcher
-$LocalBin = Join-Path $HOME ".local\bin"
-if (-not (Test-Path $LocalBin)) {
-    New-Item -ItemType Directory -Force -Path $LocalBin | Out-Null
-}
-$DispatcherSource = Join-Path $WorkspaceDir "scripts\memoid.ps1"
-if (Test-Path $DispatcherSource) {
-    Write-Host "Installing memoid CLI to $LocalBin\memoid.ps1"
-    New-Item -ItemType SymbolicLink -Path (Join-Path $LocalBin "memoid.ps1") -Target $DispatcherSource -Force | Out-Null
+Write-Info "Initializing Memoid..."
+uv sync
+uv run python scripts/post_init_check.py
+
+# 4. Global CLI Setup (Adding to User Path)
+Write-Info "Checking for scripts directory in PATH..."
+$ScriptsDir = Join-Path $HOME "Documents\WindowsPowerShell\Scripts"
+if (-not (Test-Path $ScriptsDir)) { New-Item -ItemType Directory -Path $ScriptsDir -Force }
+
+$DestFile = Join-Path $ScriptsDir "memoid.ps1"
+Copy-Item "scripts\memoid.ps1" $DestFile -Force
+Write-Success "CLI 'memoid' installed to $DestFile"
+
+# 5. MCP Setup
+Write-Host ""
+Write-Info "Scanning for AI agents to configure MCP..."
+$AgentsFound = 0
+
+function Update-McpConfig ($ConfigFile) {
+    Write-Info "Creating backup: ${ConfigFile}.bak"
+    Copy-Item $ConfigFile "${ConfigFile}.bak" -Force
+
+    $Config = Get-Content $ConfigFile | ConvertFrom-Json
+    if (-not $Config.mcpServers) { $Config | Add-Member -MemberType NoteProperty -Name "mcpServers" -Value @{} }
+    
+    $McpEntry = @{
+        command = "uv"
+        args = @("--directory", $InstallPath, "run", "scripts/mcp_server.py")
+    }
+    
+    if ($Config.mcpServers.PSObject.Properties.Name -contains "memoid") {
+        $Config.mcpServers.memoid = $McpEntry
+    } else {
+        $Config.mcpServers | Add-Member -MemberType NoteProperty -Name "memoid" -Value $McpEntry
+    }
+
+    $Config | ConvertTo-Json -Depth 10 | Set-Content $ConfigFile
 }
 
-Write-Host ""
-Write-Host "Workspace ready: $WorkspaceDir"
-Write-Host ""
-Write-Host "Next step:"
-Write-Host "  cd `"$WorkspaceDir`"; uv sync; uv run python scripts/post_init_check.py"
+# --- Check Claude Desktop ---
+$ClaudeConfig = Join-Path $env:APPDATA "Claude\claude_desktop_config.json"
+if (Test-Path $ClaudeConfig) {
+    $AgentsFound++
+    $Confirm = Read-Host "Found Claude Desktop configuration. Install Memoid MCP? [Y/n]"
+    if ($Confirm -notmatch "^[Nn]") {
+        Update-McpConfig $ClaudeConfig
+        Write-Success "Claude Desktop MCP configured."
+    }
+}
+
+# --- Check OpenCode ---
+$OpenCodeConfig = Join-Path $HOME ".opencode\config.json"
+if (Test-Path $OpenCodeConfig) {
+    $AgentsFound++
+    $Confirm = Read-Host "Found OpenCode configuration. Install Memoid MCP? [Y/n]"
+    if ($Confirm -notmatch "^[Nn]") {
+        Update-McpConfig $OpenCodeConfig
+        Write-Success "OpenCode MCP configured."
+    }
+}
+
+if ($AgentsFound -eq 0) {
+    Write-Warn "No common AI agent configurations (Claude Desktop, etc.) were found automatically."
+    Write-Info "To set up MCP manually, refer to the README.md in $InstallPath"
+}
+
+Write-Success "`nMemoid installation complete!"
+Write-Info "Path: $InstallPath"
+Write-Info "You can now run 'memoid gemini' or use it via MCP in your configured agents."

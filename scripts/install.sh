@@ -1,151 +1,134 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_URL="${MEMOID_REPO_URL:-https://github.com/prods/memoid.git}"
-BASE_DIR="${MEMOID_BASE_DIR:-$HOME/Documents/memoid}"
-WORKSPACES_DIR="${MEMOID_WORKSPACES_DIR:-$BASE_DIR/workspaces}"
+# Memoid Ultimate Installer
+# Handles: cloning, uv setup, init, and automatic MCP configuration for agents.
 
-require_command() {
-  if ! command -v "$1" >/dev/null 2>&1; then
-    printf 'missing required command: %s\n' "$1" >&2
-    if [[ "$1" == "uv" ]]; then
-      printf 'uv is required for the Memoid runtime environment.\n'
-      printf 'Would you like to install it now? [y/N] '
-      read -r install_uv
-      if [[ "$install_uv" =~ ^[Yy]$ ]]; then
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        if [[ -f "$HOME/.local/bin/env" ]]; then
-          source "$HOME/.local/bin/env"
-        elif [[ -f "$HOME/.cargo/bin/uv" ]]; then
-          export PATH="$HOME/.cargo/bin:$PATH"
-        fi
-        
-        if ! command -v uv >/dev/null 2>&1; then
-          printf 'uv installation failed or is not in PATH. Please restart your shell and try again.\n' >&2
-          exit 1
-        fi
-        return 0
-      else
-        printf 'tip: install uv manually from https://github.com/astral-sh/uv\n' >&2
-      fi
-    fi
+REPO_URL="https://github.com/prods/memoid.git"
+
+# Utility: Print in color
+printf_color() {
+    local color_code=$1
+    shift
+    printf "\033[${color_code}m%s\033[0m\n" "$*"
+}
+
+info() { printf_color "34" "INFO: $*"; }
+success() { printf_color "32" "SUCCESS: $*"; }
+warn() { printf_color "33" "WARN: $*"; }
+error() { printf_color "31" "ERROR: $*"; }
+
+# 1. Path Selection
+printf "Where would you like to install Memoid? [default: $HOME/memoid]: "
+read -r INSTALL_PATH
+INSTALL_PATH="${INSTALL_PATH:-$HOME/memoid}"
+
+if [[ -d "$INSTALL_PATH" ]]; then
+    error "Directory $INSTALL_PATH already exists. Please remove it or choose a different path."
     exit 1
-  fi
-}
+fi
 
-detect_workspace() {
-  if [[ -f ".memoid-workspace" ]]; then
-    WORKSPACE_NAME=$(grep "WORKSPACE_NAME=" .memoid-workspace | cut -d'=' -f2)
-    if [[ -n "$WORKSPACE_NAME" ]]; then
-      WORKSPACE_DIR=$(pwd)
-      return 0
-    fi
-  fi
-  return 1
-}
-
-prompt_workspace_name() {
-  if [[ -n "${1:-}" ]]; then
-    WORKSPACE_NAME="$1"
-    return
-  fi
-
-  local workspace_name
-  while true; do
-    printf 'Workspace name: '
-    read -r workspace_name
-    workspace_name="${workspace_name#"${workspace_name%%[![:space:]]*}"}"
-    workspace_name="${workspace_name%"${workspace_name##*[![:space:]]}"}"
-    if [[ -z "$workspace_name" ]]; then
-      printf 'workspace name cannot be empty\n' >&2
-      continue
-    fi
-    if [[ "$workspace_name" == *"/"* || "$workspace_name" == *"\\"* ]]; then
-      printf 'workspace name cannot contain path separators\n' >&2
-      continue
-    fi
-    WORKSPACE_NAME="$workspace_name"
-    return
-  done
-}
-
-ensure_runtime_dirs() {
-  local workspace_dir="$1"
-  mkdir -p \
-    "$workspace_dir/memory/raw/articles" \
-    "$workspace_dir/memory/raw/transcripts" \
-    "$workspace_dir/memory/raw/assets" \
-    "$workspace_dir/memory/raw/inbox" \
-    "$workspace_dir/memory/evidence/sessions" \
-    "$workspace_dir/memory/evidence/decisions" \
-    "$workspace_dir/memory/evidence/source-notes" \
-    "$workspace_dir/memory/evidence/audits"
-}
-
-write_workspace_config() {
-  local workspace_dir="$1"
-  cat >"$workspace_dir/.memoid-workspace" <<EOF
-REPO_URL=$REPO_URL
-WORKSPACE_NAME=$WORKSPACE_NAME
-EOF
-}
-
-main() {
-  require_command git
-  require_command uv
-
-  LOCAL_MODE=false
-  WORKSPACE_ARG=""
-
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-      --local)
-        LOCAL_MODE=true
-        shift
-        ;;
-      *)
-        WORKSPACE_ARG="$1"
-        shift
-        ;;
-    esac
-  done
-
-  if detect_workspace; then
-    printf 'Detected existing workspace: %s\n' "$WORKSPACE_NAME"
-  else
-    mkdir -p "$WORKSPACES_DIR"
-    prompt_workspace_name "$WORKSPACE_ARG"
-    WORKSPACE_DIR="$WORKSPACES_DIR/$WORKSPACE_NAME"
-    
-    if [[ -d "$WORKSPACE_DIR" ]]; then
-      printf 'Error: Workspace directory %s already exists.\n' "$WORKSPACE_DIR" >&2
-      exit 1
-    fi
-
-    if [ "$LOCAL_MODE" = true ]; then
-      local current_repo_root
-      current_repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-      printf 'Local mode: cloning from %s\n' "$current_repo_root"
-      git clone "$current_repo_root" "$WORKSPACE_DIR"
+# 2. UV Check/Install
+if ! command -v uv &> /dev/null; then
+    warn "uv (Python manager) not found."
+    printf "Would you like to install uv now? [Y/n]: "
+    read -r INSTALL_UV
+    if [[ ! "$INSTALL_UV" =~ ^[Nn]$ ]]; then
+        info "Installing uv..."
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        # Source uv environment
+        if [[ -f "$HOME/.local/bin/env" ]]; then
+            source "$HOME/.local/bin/env"
+        fi
+        export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
     else
-      printf 'Cloning Memoid from %s into %s\n' "$REPO_URL" "$WORKSPACE_DIR"
-      git clone "$REPO_URL" "$WORKSPACE_DIR"
+        error "uv is required for Memoid. Please install it and run this script again."
+        exit 1
     fi
-  fi
+fi
 
-  ensure_runtime_dirs "$WORKSPACE_DIR"
-  write_workspace_config "$WORKSPACE_DIR"
+# 3. Clone and Init
+info "Cloning Memoid into $INSTALL_PATH..."
+git clone "$REPO_URL" "$INSTALL_PATH"
+cd "$INSTALL_PATH"
 
-  # Install memoid CLI dispatcher from the new workspace
-  mkdir -p "$HOME/.local/bin"
-  if [[ -f "$WORKSPACE_DIR/scripts/memoid" ]]; then
-    printf 'Installing memoid CLI to ~/.local/bin/memoid\n'
-    ln -sf "$WORKSPACE_DIR/scripts/memoid" "$HOME/.local/bin/memoid"
-  fi
+info "Initializing Memoid..."
+uv sync
+uv run python scripts/post_init_check.py
 
-  printf '\nWorkspace ready: %s\n' "$WORKSPACE_DIR"
-  printf '\nNext step:\n'
-  printf '  cd "%s" && uv sync && uv run python scripts/post_init_check.py\n' "$WORKSPACE_DIR"
+# 4. Global CLI Setup
+mkdir -p "$HOME/.local/bin"
+ln -sf "$INSTALL_PATH/scripts/memoid" "$HOME/.local/bin/memoid"
+success "CLI 'memoid' installed to ~/.local/bin/memoid"
+
+# 5. MCP Setup
+printf "\n"
+info "Scanning for AI agents to configure MCP..."
+AGENTS_FOUND=0
+
+# --- Helper: Update JSON Config ---
+update_mcp_config() {
+    local config_file=$1
+    local name="memoid"
+    local command="uv"
+    local dir=$INSTALL_PATH
+    
+    # Create backup
+    cp "$config_file" "${config_file}.bak"
+    info "Created backup: ${config_file}.bak"
+
+    # Use python to safely update JSON (since we know uv/python is available)
+    uv run python -c "
+import json, os
+path = '$config_file'
+with open(path, 'r') as f:
+    data = json.load(f)
+if 'mcpServers' not in data:
+    data['mcpServers'] = {}
+data['mcpServers']['$name'] = {
+    'command': '$command',
+    'args': ['--directory', '$dir', 'run', 'scripts/mcp_server.py']
+}
+with open(path, 'w') as f:
+    json.dump(data, f, indent=2)
+"
 }
 
-main "$@"
+# --- Check Claude Desktop ---
+CLAUDE_CONFIG=""
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    CLAUDE_CONFIG="$HOME/Library/Application Support/Claude/claude_desktop_config.json"
+else
+    CLAUDE_CONFIG="$HOME/.config/Claude/claude_desktop_config.json"
+fi
+
+if [[ -f "$CLAUDE_CONFIG" ]]; then
+    AGENTS_FOUND=$((AGENTS_FOUND + 1))
+    printf "Found Claude Desktop configuration. Install Memoid MCP? [Y/n]: "
+    read -r CONFIRM
+    if [[ ! "$CONFIRM" =~ ^[Nn]$ ]]; then
+        update_mcp_config "$CLAUDE_CONFIG"
+        success "Claude Desktop MCP configured."
+    fi
+fi
+
+# --- Check OpenCode (Similar to Cursor) ---
+OPENCODE_CONFIG="$HOME/.opencode/config.json" # Best guess for OpenCode path
+if [[ -f "$OPENCODE_CONFIG" ]]; then
+    AGENTS_FOUND=$((AGENTS_FOUND + 1))
+    printf "Found OpenCode configuration. Install Memoid MCP? [Y/n]: "
+    read -r CONFIRM
+    if [[ ! "$CONFIRM" =~ ^[Nn]$ ]]; then
+        update_mcp_config "$OPENCODE_CONFIG"
+        success "OpenCode MCP configured."
+    fi
+fi
+
+if [[ $AGENTS_FOUND -eq 0 ]]; then
+    warn "No common AI agent configurations (Claude Desktop, etc.) were found automatically."
+    info "To set up MCP manually, refer to the README.md in $INSTALL_PATH"
+fi
+
+success "\nMemoid installation complete!"
+info "Path: $INSTALL_PATH"
+info "You can now run 'memoid gemini' or use it via MCP in your configured agents."

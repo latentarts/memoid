@@ -5,7 +5,5 @@ description = "Memoid: a markdown-first memory system for AI agents"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "trafilatura>=2.0.0",
-    "youtube-transcript-api>=0.6.2",
-    "yt-dlp>=2025.3.31",
+    "mcp>=1.0.0",
 ]

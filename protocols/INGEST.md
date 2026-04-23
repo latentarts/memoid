@@ -7,7 +7,7 @@ Turn a new source into durable, searchable knowledge.
 ## Process
 
 1. Store the source under `memory/raw/`.
-2. Read the source.
+2. Read the source. (If the source is a local codebase, follow `protocols/INGEST_CODE.md`).
 3. Create a source note under `memory/evidence/source-notes/`.
 4. Update or create relevant pages in `memory/wiki/`.
 5. Update `memory/wiki/INDEX.md` if the new page set changed.

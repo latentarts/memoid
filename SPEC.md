@@ -11,19 +11,23 @@ The target is a local, markdown-first knowledge system that is easy to inspect, 
 
 ## Design Position
 
-The right abstraction is not “rebuild MemPalace in markdown”.
+The right abstraction is a **Unified Brain**:
 
-The right abstraction is:
+- One central repository for all knowledge compounding.
+- Use domain folders (e.g., `wiki/domains/work/`) for organization rather than repository isolation.
+- Raw sources remain immutable.
+- The agent incrementally maintains synthesis pages.
+- A small set of protocol files governs how the agent wakes up, retrieves, files, and preserves evidence.
 
-- use the Karpathy wiki model for the primary knowledge artifact
-- use MemPalace-style memory discipline to make the wiki reliable for an agent
+## Future Roadmap: The Fleet Model
 
-This means:
+While v1 focuses on a single unified repository, future versions may re-introduce "The Fleet":
+- Isolated workspaces for strict legal/privacy boundaries (e.g., Client A vs Client B).
+- A workspace manager CLI (`memoid new`, `memoid ls`).
+- Multi-workspace awareness in the MCP server.
 
-- the wiki is the main persistent artifact
-- raw sources remain immutable
-- the agent incrementally maintains synthesis pages
-- a small set of protocol files governs how the agent wakes up, retrieves, files, and preserves evidence
+For now, these are excluded to prioritize simplicity and the compounding of knowledge.
+
 
 ## Source Models
 
