@@ -20,7 +20,7 @@ error() { printf_color "31" "ERROR: $*"; }
 
 # 1. Path Selection
 printf "Where would you like to install Memoid? [default: $HOME/memoid]: "
-read -r INSTALL_PATH
+read -r INSTALL_PATH < /dev/tty 2>/dev/null || true
 INSTALL_PATH="${INSTALL_PATH:-$HOME/memoid}"
 
 if [[ -d "$INSTALL_PATH" ]]; then
@@ -32,7 +32,7 @@ fi
 if ! command -v uv &> /dev/null; then
     warn "uv (Python manager) not found."
     printf "Would you like to install uv now? [Y/n]: "
-    read -r INSTALL_UV
+    read -r INSTALL_UV < /dev/tty 2>/dev/null || true
     if [[ ! "$INSTALL_UV" =~ ^[Nn]$ ]]; then
         info "Installing uv..."
         curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -105,7 +105,7 @@ fi
 if [[ -f "$CLAUDE_CONFIG" ]]; then
     AGENTS_FOUND=$((AGENTS_FOUND + 1))
     printf "Found Claude Desktop configuration. Install Memoid MCP? [Y/n]: "
-    read -r CONFIRM
+    read -r CONFIRM < /dev/tty 2>/dev/null || true
     if [[ ! "$CONFIRM" =~ ^[Nn]$ ]]; then
         update_mcp_config "$CLAUDE_CONFIG"
         success "Claude Desktop MCP configured."
@@ -117,7 +117,7 @@ OPENCODE_CONFIG="$HOME/.opencode/config.json" # Best guess for OpenCode path
 if [[ -f "$OPENCODE_CONFIG" ]]; then
     AGENTS_FOUND=$((AGENTS_FOUND + 1))
     printf "Found OpenCode configuration. Install Memoid MCP? [Y/n]: "
-    read -r CONFIRM
+    read -r CONFIRM < /dev/tty 2>/dev/null || true
     if [[ ! "$CONFIRM" =~ ^[Nn]$ ]]; then
         update_mcp_config "$OPENCODE_CONFIG"
         success "OpenCode MCP configured."
