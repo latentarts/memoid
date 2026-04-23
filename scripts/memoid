@@ -2,19 +2,14 @@
 set -e
 
 # Memoid CLI Dispatcher
-# Usage: memoid <workspace> <agent> [args...]
+# Simplified for Unified Brain model.
 
-BASE_DIR="${MEMOID_BASE_DIR:-$HOME/Documents/memoid}"
-WORKSPACES_DIR="${MEMOID_WORKSPACES_DIR:-$BASE_DIR/workspaces}"
-
-# Help message
 show_help() {
-  printf "Usage: memoid <workspace> <agent> [args...]\n"
-  printf "       memoid ls\n"
-  printf "       memoid new <workspace-name>\n"
-  printf "       memoid update [workspace-name]\n"
-  printf "       memoid version [workspace-name]\n"
-  printf "Example: memoid personal claude\n"
+  printf "Usage: memoid <agent> [args...]\n"
+  printf "       memoid version\n"
+  printf "       memoid init\n"
+  printf "       memoid update\n"
+  printf "Example: memoid gemini\n"
   exit 1
 }
 
@@ -22,113 +17,49 @@ if [[ $# -lt 1 ]]; then
   show_help
 fi
 
-# Handle ls command
-if [[ "$1" == "ls" ]]; then
-  if [[ -d "$WORKSPACES_DIR" ]]; then
-    printf "Existing workspaces in %s:\n" "$WORKSPACES_DIR"
-    ls -1 "$WORKSPACES_DIR"
-  else
-    printf "No workspaces directory found at %s\n" "$WORKSPACES_DIR"
-  fi
-  exit 0
-fi
-
 # Handle version command
 if [[ "$1" == "version" ]]; then
-  TARGET_DIR="."
-  if [[ $# -ge 2 ]]; then
-    TARGET_DIR="$WORKSPACES_DIR/$2"
-  fi
-
-  if [[ -d "$TARGET_DIR/.git" ]]; then
-    VERSION=$(git -C "$TARGET_DIR" describe --tags --always 2>/dev/null || echo "untagged")
-    printf "Memoid version (%s): %s\n" "$TARGET_DIR" "$VERSION"
-  else
-    printf "Error: Target directory %s is not a git repository.\n" "$TARGET_DIR" >&2
-    exit 1
-  fi
+  VERSION=$(git describe --tags --always 2>/dev/null || echo "untagged")
+  printf "Memoid version: %s\n" "$VERSION"
   exit 0
 fi
 
-# Handle new command
-if [[ "$1" == "new" ]]; then
-  if [[ $# -lt 2 ]]; then
-    printf "Usage: memoid new <workspace-name>\n"
-    exit 1
-  fi
-  WORKSPACE_NAME="$2"
-  # Try to find install.sh in current directory or ~/.local/bin/memoid's source
-  INSTALL_SCRIPT="$(dirname "$0")/install.sh"
-  if [[ ! -f "$INSTALL_SCRIPT" ]]; then
-     # If we are the symlink, $0 might be in ~/.local/bin/
-     INSTALL_SCRIPT="$(dirname "$(readlink -f "$0")")/install.sh"
-  fi
-
-  if [[ -f "$INSTALL_SCRIPT" ]]; then
-    exec "$INSTALL_SCRIPT" "$WORKSPACE_NAME"
-  else
-    printf "Error: Install script not found.\n" >&2
-    exit 1
-  fi
+# Handle init command
+if [[ "$1" == "init" ]]; then
+  uv sync
+  uv run python scripts/post_init_check.py
   exit 0
 fi
 
 # Handle update command
 if [[ "$1" == "update" ]]; then
-  TARGET_DIR="."
-  if [[ $# -ge 2 ]]; then
-    TARGET_DIR="$WORKSPACES_DIR/$2"
-  fi
-
-  if [[ ! -d "$TARGET_DIR/.git" ]]; then
-    printf "Error: Target directory %s is not a git repository.\n" "$TARGET_DIR" >&2
-    exit 1
-  fi
-
-  printf "Updating Memoid workspace in %s...\n" "$TARGET_DIR"
-  git -C "$TARGET_DIR" fetch --tags --prune
+  printf "Updating Memoid...\n"
+  git fetch --tags --prune
   
   # Get latest tag
-  LATEST_TAG=$(git -C "$TARGET_DIR" tag --sort=-v:refname | head -n 1)
+  LATEST_TAG=$(git tag --sort=-v:refname | head -n 1)
   
   if [[ -n "$LATEST_TAG" ]]; then
     printf "Switching to latest tag: %s\n" "$LATEST_TAG"
-    git -C "$TARGET_DIR" checkout "$LATEST_TAG"
+    git checkout "$LATEST_TAG"
   else
     printf "No tags found, pulling latest from main...\n"
-    git -C "$TARGET_DIR" pull --ff-only
+    git pull --ff-only
   fi
   
-  printf "Memoid workspace updated successfully.\n"
-  
-  # Run post-init check if possible
-  if [[ -f "$TARGET_DIR/scripts/post_init_check.py" ]]; then
-     printf "Running post-update check...\n"
-     (cd "$TARGET_DIR" && uv run python scripts/post_init_check.py)
-  fi
+  uv sync
+  uv run python scripts/post_init_check.py
+  printf "Memoid updated successfully.\n"
   exit 0
 fi
 
-if [[ $# -lt 2 ]]; then
-  show_help
-fi
-
-WORKSPACE_NAME="$1"
-AGENT_CMD="$2"
-shift 2
-
-WORKSPACE_DIR="$WORKSPACES_DIR/$WORKSPACE_NAME"
-
-if [[ ! -d "$WORKSPACE_DIR" ]]; then
-  printf "Error: Workspace '%s' not found in %s\n" "$WORKSPACE_NAME" "$WORKSPACES_DIR" >&2
-  exit 1
-fi
+AGENT_CMD="$1"
+shift
 
 if ! command -v "$AGENT_CMD" >/dev/null 2>&1; then
   printf "Error: Agent command '%s' not found in PATH\n" "$AGENT_CMD" >&2
   exit 1
 fi
 
-# Change directory and execute agent command
-cd "$WORKSPACE_DIR"
+# Execute agent command in the current repository
 exec "$AGENT_CMD" "$@"
