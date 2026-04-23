@@ -74,13 +74,13 @@ Run the one-line installer to clone, initialize, and automatically configure you
 **Linux / macOS:**
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/prods/memoid/main/scripts/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/latentarts/memoid/main/scripts/install.sh | bash
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
-powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/prods/memoid/main/scripts/install.ps1 | iex"
+powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/latentarts/memoid/main/scripts/install.ps1 | iex"
 ```
 
 *The installer will ask for your preferred path, install `uv` if missing, and offer to back up and update your AI agent configurations to include the Memoid MCP server.*
