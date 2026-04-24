@@ -51,6 +51,10 @@ $DestFile = Join-Path $ScriptsDir "memoid.ps1"
 Copy-Item "scripts\memoid.ps1" $DestFile -Force
 Write-Success "CLI 'memoid' installed to $DestFile"
 
+Write-Info "Running CLI smoke test..."
+& $DestFile version | Out-Null
+Write-Success "CLI smoke test passed"
+
 # 5. MCP Setup
 Write-Host ""
 Write-Info "To set up Memoid as an MCP server for your AI agent, please refer to the instructions in the README.md"

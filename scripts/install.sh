@@ -61,6 +61,10 @@ mkdir -p "$HOME/.local/bin"
 ln -sf "$INSTALL_PATH/scripts/memoid" "$HOME/.local/bin/memoid"
 success "CLI 'memoid' installed to ~/.local/bin/memoid"
 
+info "Running CLI smoke test..."
+"$HOME/.local/bin/memoid" version >/dev/null
+success "CLI smoke test passed"
+
 # 5. MCP Setup
 printf "\n"
 info "To set up Memoid as an MCP server for your AI agent, please refer to the instructions in the README.md"

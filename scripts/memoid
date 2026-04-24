@@ -1,10 +1,21 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 # Memoid CLI Dispatcher
 # Simplified for Unified Brain model.
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOURCE_PATH="${BASH_SOURCE[0]}"
+while [[ -L "$SOURCE_PATH" ]]; do
+  LINK_DIR="$(cd "$(dirname "$SOURCE_PATH")" && pwd)"
+  SOURCE_TARGET="$(readlink "$SOURCE_PATH")"
+  if [[ "$SOURCE_TARGET" != /* ]]; then
+    SOURCE_PATH="$LINK_DIR/$SOURCE_TARGET"
+  else
+    SOURCE_PATH="$SOURCE_TARGET"
+  fi
+done
+
+SCRIPT_DIR="$(cd "$(dirname "$SOURCE_PATH")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 show_help() {
@@ -62,8 +73,9 @@ fi
 
 # Handle mcp command
 if [[ "$1" == "mcp" ]]; then
+  shift
   cd "$ROOT_DIR"
-  exec uv run python scripts/mcp_server.py
+  exec uv run --quiet python scripts/mcp_server.py "$@"
 fi
 
 AGENT_CMD="$1"
