@@ -69,7 +69,7 @@ Memoid is 100% transparent. No databases, just interlinked Markdown files.
 
 ### 1. Unified Installation (Recommended)
 
-Run the one-line installer to clone Memoid, install the CLI, and automatically initialize the `memory/` workspace.
+Run the one-line installer to clone Memoid, install the CLI, automatically initialize the `memory/` workspace, and optionally add the Memoid MCP entry to detected agent configs.
 
 **Linux / macOS:**
 
@@ -83,7 +83,7 @@ curl -sSL https://raw.githubusercontent.com/latentarts/memoid/main/scripts/insta
 powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/latentarts/memoid/main/scripts/install.ps1 | iex"
 ```
 
-*The installer will ask for your preferred path, install `uv` if missing, and run `memoid init` for you. Once installed, proceed to the [MCP Setup](#-mcp-setup) section to connect your agents.*
+*The installer will ask for your preferred path, install `uv` if missing, run `memoid init` for you, detect supported AI agents, and offer to update their MCP configs automatically. Once installed, you can still use the [MCP Setup](#-mcp-setup) section for manual configuration or verification.*
 
 ---
 
@@ -366,7 +366,7 @@ These CLIs typically use a `~/.gemini/settings.json` file. Ensure they are confi
 Add the following to your `codex.toml` configuration file:
 
 ```toml
-[mcpServers.memoid]
+[mcp_servers.memoid]
 command = "memoid"
 args = ["mcp"]
 ```
