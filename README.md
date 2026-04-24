@@ -141,6 +141,7 @@ You may find yourself running an AI agent (like Gemini CLI) directly inside the 
 |:---------------- |:----------------------------------------------------------------------------------------------------------------------- |
 | `memoid init`    | Prepares the directory structure. Safe to run multiple times; it will not delete existing data.                         |
 | `memoid update`  | Updates the engine and protocols. **Never** overwrites your knowledge base (`memory/` folder).                          |
+| `memoid mcp`     | Launches the MCP server for global connectivity.                                                                        |
 | `memoid <agent>` | Launches an agent (e.g., `gemini`, `claude`, `codex`) inside the brain. Shortcut for running the agent in the `~/memoid` folder. |
 | `memoid version` | Displays the current version.                                                                                           |
 
@@ -239,10 +240,7 @@ Memoid doesn't use complex code for logic; it uses Markdown instructions in the 
 
 Memoid uses the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) to provide your global brain to any AI agent. To enable this, you must add Memoid as a server in your agent's configuration.
 
-### 1. Identify your Install Path
-The standard installation path is `~/memoid`. Replace `FULL_PATH_TO_MEMOID` in the examples below with your actual absolute path (e.g., `/home/user/memoid`).
-
-### 2. Configuration for AI Agents
+### Configuration for AI Agents
 
 #### **Claude Desktop**
 Edit your `claude_desktop_config.json` (usually at `~/.config/Claude/claude_desktop_config.json` on Linux or `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
@@ -251,8 +249,8 @@ Edit your `claude_desktop_config.json` (usually at `~/.config/Claude/claude_desk
 {
   "mcpServers": {
     "memoid": {
-      "command": "uv",
-      "args": ["--directory", "FULL_PATH_TO_MEMOID", "run", "scripts/mcp_server.py"]
+      "command": "memoid",
+      "args": ["mcp"]
     }
   }
 }
@@ -266,25 +264,34 @@ Edit your `opencode.json` (usually at `~/.config/opencode/opencode.json`):
   "mcp": {
     "memoid": {
       "type": "local",
-      "command": ["uv", "--directory", "FULL_PATH_TO_MEMOID", "run", "scripts/mcp_server.py"],
+      "command": ["memoid", "mcp"],
       "enabled": true
     }
   }
 }
 ```
 
-#### **Gemini CLI / Codex CLI**
+#### **Gemini CLI**
 These CLIs typically use a `~/.gemini/settings.json` file. Ensure they are configured to point to the Memoid MCP server:
 
 ```json
 {
   "mcpServers": {
     "memoid": {
-      "command": "uv",
-      "args": ["--directory", "FULL_PATH_TO_MEMOID", "run", "scripts/mcp_server.py"]
+      "command": "memoid",
+      "args": ["mcp"]
     }
   }
 }
+```
+
+#### **Codex**
+Add the following to your `codex.toml` configuration file:
+
+```toml
+[mcpServers.memoid]
+command = "memoid"
+args = ["mcp"]
 ```
 
 ---

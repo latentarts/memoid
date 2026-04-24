@@ -4,8 +4,12 @@ set -e
 # Memoid CLI Dispatcher
 # Simplified for Unified Brain model.
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 show_help() {
   printf "Usage: memoid <agent> [args...]\n"
+  printf "       memoid mcp\n"
   printf "       memoid version\n"
   printf "       memoid init\n"
   printf "       memoid update\n"
@@ -19,6 +23,7 @@ fi
 
 # Handle version command
 if [[ "$1" == "version" ]]; then
+  cd "$ROOT_DIR"
   VERSION=$(git describe --tags --always 2>/dev/null || echo "untagged")
   printf "Memoid version: %s\n" "$VERSION"
   exit 0
@@ -26,6 +31,7 @@ fi
 
 # Handle init command
 if [[ "$1" == "init" ]]; then
+  cd "$ROOT_DIR"
   uv sync
   uv run python scripts/post_init_check.py
   exit 0
@@ -33,6 +39,7 @@ fi
 
 # Handle update command
 if [[ "$1" == "update" ]]; then
+  cd "$ROOT_DIR"
   printf "Updating Memoid...\n"
   git fetch --tags --prune
   
@@ -51,6 +58,12 @@ if [[ "$1" == "update" ]]; then
   uv run python scripts/post_init_check.py
   printf "Memoid updated successfully.\n"
   exit 0
+fi
+
+# Handle mcp command
+if [[ "$1" == "mcp" ]]; then
+  cd "$ROOT_DIR"
+  exec uv run python scripts/mcp_server.py
 fi
 
 AGENT_CMD="$1"
