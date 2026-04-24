@@ -69,7 +69,7 @@ Memoid is 100% transparent. No databases, just interlinked Markdown files.
 
 ### 1. Unified Installation (Recommended)
 
-Run the one-line installer to clone and initialize Memoid on your system.
+Run the one-line installer to clone Memoid, install the CLI, and automatically initialize the `memory/` workspace.
 
 **Linux / macOS:**
 
@@ -83,13 +83,13 @@ curl -sSL https://raw.githubusercontent.com/latentarts/memoid/main/scripts/insta
 powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/latentarts/memoid/main/scripts/install.ps1 | iex"
 ```
 
-*The installer will ask for your preferred path and install `uv` if missing. Once installed, proceed to the [MCP Setup](#-mcp-setup) section to connect your agents.*
+*The installer will ask for your preferred path, install `uv` if missing, and run `memoid init` for you. Once installed, proceed to the [MCP Setup](#-mcp-setup) section to connect your agents.*
 
 ---
 
 ### 2. Manual Setup (Alternative)
 
-If you prefer to do it yourself:
+If you prefer to do it yourself, `memoid init` remains a required manual step after cloning:
 
 1. **Clone**: `git clone https://github.com/latentarts/memoid.git ~/memoid`
 2. **Initialize**: `cd ~/memoid && ./scripts/memoid init`

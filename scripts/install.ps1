@@ -1,5 +1,5 @@
 # Memoid Ultimate Installer for Windows
-# Handles: cloning, uv setup, init, and automatic MCP configuration.
+# Handles: cloning, uv setup, memory initialization, and MCP setup guidance.
 
 $RepoUrl = "https://github.com/latentarts/memoid.git"
 
@@ -33,14 +33,10 @@ if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
     }
 }
 
-# 3. Clone and Init
+# 3. Clone
 Write-Info "Cloning Memoid into $InstallPath..."
 git clone $RepoUrl $InstallPath
 Set-Location $InstallPath
-
-Write-Info "Initializing Memoid..."
-uv sync
-uv run python scripts/post_init_check.py
 
 # 4. Global CLI Setup (Adding to User Path)
 Write-Info "Checking for scripts directory in PATH..."
@@ -54,6 +50,10 @@ Write-Success "CLI 'memoid' installed to $DestFile"
 Write-Info "Running CLI smoke test..."
 & $DestFile version | Out-Null
 Write-Success "CLI smoke test passed"
+
+Write-Info "Initializing Memoid memory..."
+& $DestFile init
+Write-Success "Memoid memory initialized"
 
 # 5. MCP Setup
 Write-Host ""

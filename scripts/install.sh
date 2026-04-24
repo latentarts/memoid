@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Memoid Ultimate Installer
-# Handles: cloning, uv setup, init, and automatic MCP configuration for agents.
+# Handles: cloning, uv setup, memory initialization, and MCP setup guidance.
 
 REPO_URL="https://github.com/latentarts/memoid.git"
 
@@ -47,14 +47,10 @@ if ! command -v uv &> /dev/null; then
     fi
 fi
 
-# 3. Clone and Init
+# 3. Clone
 info "Cloning Memoid into $INSTALL_PATH..."
 git clone "$REPO_URL" "$INSTALL_PATH"
 cd "$INSTALL_PATH"
-
-info "Initializing Memoid..."
-uv sync
-uv run python scripts/post_init_check.py
 
 # 4. Global CLI Setup
 mkdir -p "$HOME/.local/bin"
@@ -64,6 +60,10 @@ success "CLI 'memoid' installed to ~/.local/bin/memoid"
 info "Running CLI smoke test..."
 "$HOME/.local/bin/memoid" version >/dev/null
 success "CLI smoke test passed"
+
+info "Initializing Memoid memory..."
+"$HOME/.local/bin/memoid" init
+success "Memoid memory initialized"
 
 # 5. MCP Setup
 printf "\n"
