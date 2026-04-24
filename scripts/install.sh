@@ -63,71 +63,7 @@ success "CLI 'memoid' installed to ~/.local/bin/memoid"
 
 # 5. MCP Setup
 printf "\n"
-info "Scanning for AI agents to configure MCP..."
-AGENTS_FOUND=0
-
-# --- Helper: Update JSON Config ---
-update_mcp_config() {
-    local config_file=$1
-    local name="memoid"
-    local command="uv"
-    local dir=$INSTALL_PATH
-
-    # Create backup
-    cp "$config_file" "${config_file}.bak"
-    info "Created backup: ${config_file}.bak"
-
-    # Use python to safely update JSON (since we know uv/python is available)
-    uv run python -c "
-import json, os
-path = '$config_file'
-with open(path, 'r') as f:
-    data = json.load(f)
-if 'mcpServers' not in data:
-    data['mcpServers'] = {}
-data['mcpServers']['$name'] = {
-    'command': '$command',
-    'args': ['--directory', '$dir', 'run', 'scripts/mcp_server.py']
-}
-with open(path, 'w') as f:
-    json.dump(data, f, indent=2)
-"
-}
-
-# --- Check Claude Desktop ---
-CLAUDE_CONFIG=""
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    CLAUDE_CONFIG="$HOME/Library/Application Support/Claude/claude_desktop_config.json"
-else
-    CLAUDE_CONFIG="$HOME/.config/Claude/claude_desktop_config.json"
-fi
-
-if [[ -f "$CLAUDE_CONFIG" ]]; then
-    AGENTS_FOUND=$((AGENTS_FOUND + 1))
-    printf "Found Claude Desktop configuration. Install Memoid MCP? [Y/n]: "
-    read -r CONFIRM < /dev/tty 2>/dev/null || true
-    if [[ ! "$CONFIRM" =~ ^[Nn]$ ]]; then
-        update_mcp_config "$CLAUDE_CONFIG"
-        success "Claude Desktop MCP configured."
-    fi
-fi
-
-# --- Check OpenCode (Similar to Cursor) ---
-OPENCODE_CONFIG="$HOME/.opencode/config.json" # Best guess for OpenCode path
-if [[ -f "$OPENCODE_CONFIG" ]]; then
-    AGENTS_FOUND=$((AGENTS_FOUND + 1))
-    printf "Found OpenCode configuration. Install Memoid MCP? [Y/n]: "
-    read -r CONFIRM < /dev/tty 2>/dev/null || true
-    if [[ ! "$CONFIRM" =~ ^[Nn]$ ]]; then
-        update_mcp_config "$OPENCODE_CONFIG"
-        success "OpenCode MCP configured."
-    fi
-fi
-
-if [[ $AGENTS_FOUND -eq 0 ]]; then
-    warn "No common AI agent configurations (Claude Desktop, etc.) were found automatically."
-    info "To set up MCP manually, refer to the README.md in $INSTALL_PATH"
-fi
+info "To set up Memoid as an MCP server for your AI agent, please refer to the instructions in the README.md"
 
 success "\nMemoid installation complete!"
 info "Path: $INSTALL_PATH"

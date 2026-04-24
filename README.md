@@ -2,7 +2,7 @@
 
 Memoid is a markdown-first memory system for AI agents that merges [Karpathy's LLM Wiki approach](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) and [MemPalace](https://github.com/MemPalace/mempalace).
 
-It is designed to be your **"Global Second Brain"**—accessible by any AI agent (Claude, Gemini, Cursor, OpenCode) regardless of which project you are currently working on.
+It is designed to be your **"Global Second Brain"**—accessible by any AI agent (Claude, Gemini, Codex, Cursor, OpenCode) regardless of which project you are currently working on.
 
 ---
 
@@ -69,7 +69,7 @@ Memoid is 100% transparent. No databases, just interlinked Markdown files.
 
 ### 1. Unified Installation (Recommended)
 
-Run the one-line installer to clone, initialize, and automatically configure your AI agents (Claude, OpenCode, etc.) with the Memoid MCP.
+Run the one-line installer to clone and initialize Memoid on your system.
 
 **Linux / macOS:**
 
@@ -83,7 +83,7 @@ curl -sSL https://raw.githubusercontent.com/latentarts/memoid/main/scripts/insta
 powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/latentarts/memoid/main/scripts/install.ps1 | iex"
 ```
 
-*The installer will ask for your preferred path, install `uv` if missing, and offer to back up and update your AI agent configurations to include the Memoid MCP server.*
+*The installer will ask for your preferred path and install `uv` if missing. Once installed, proceed to the [MCP Setup](#-mcp-setup) section to connect your agents.*
 
 ---
 
@@ -129,7 +129,7 @@ If you prefer to do it yourself:
 |:---------------- |:----------------------------------------------------------------------------------------------------------------------- |
 | `memoid init`    | Prepares the directory structure. Safe to run multiple times; it will not delete existing data.                         |
 | `memoid update`  | Updates the engine and protocols. **Never** overwrites your knowledge base (`memory/` folder).                          |
-| `memoid <agent>` | Launches an agent (e.g., `gemini`, `claude`) inside the brain. Shortcut for running the agent in the `~/memoid` folder. |
+| `memoid <agent>` | Launches an agent (e.g., `gemini`, `claude`, `codex`) inside the brain. Shortcut for running the agent in the `~/memoid` folder. |
 | `memoid version` | Displays the current version.                                                                                           |
 
 ---
@@ -226,3 +226,73 @@ Memoid doesn't use complex code for logic; it uses Markdown instructions in the 
 ## 📜 License
 
 MIT - Created by [prods](https://github.com/latentarts)
+
+---
+
+## 🔌 MCP Setup
+
+Memoid uses the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) to provide your global brain to any AI agent. To enable this, you must add Memoid as a server in your agent's configuration.
+
+### 1. Identify your Install Path
+The standard installation path is `~/memoid`. Replace `FULL_PATH_TO_MEMOID` in the examples below with your actual absolute path (e.g., `/home/user/memoid`).
+
+### 2. Configuration for AI Agents
+
+#### **Claude Desktop**
+Edit your `claude_desktop_config.json` (usually at `~/.config/Claude/claude_desktop_config.json` on Linux or `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "memoid": {
+      "command": "uv",
+      "args": ["--directory", "FULL_PATH_TO_MEMOID", "run", "scripts/mcp_server.py"]
+    }
+  }
+}
+```
+
+#### **OpenCode**
+Edit your `opencode.json` (usually at `~/.config/opencode/opencode.json`):
+
+```json
+{
+  "mcp": {
+    "memoid": {
+      "type": "local",
+      "command": ["uv", "--directory", "FULL_PATH_TO_MEMOID", "run", "scripts/mcp_server.py"],
+      "enabled": true
+    }
+  }
+}
+```
+
+#### **Gemini CLI / Codex CLI**
+These CLIs typically use a `settings.json` or `.mcp.json` file. Ensure they are configured to point to the Memoid MCP server:
+
+```json
+{
+  "mcpServers": {
+    "memoid": {
+      "command": "uv",
+      "args": ["--directory", "FULL_PATH_TO_MEMOID", "run", "scripts/mcp_server.py"]
+    }
+  }
+}
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### Agent Command Not Found
+If you get an error like `Error: Agent command 'gemini' not found in PATH`, ensure that the agent CLI is installed globally on your system.
+
+**For npm-based CLIs (Gemini, Codex, etc.):**
+```bash
+sudo npm install -g @google/gemini-cli
+sudo npm install -g @openai/codex
+```
+
+**For other CLIs:**
+Ensure the binary is in your `$PATH` (e.g., in `/usr/local/bin` or `~/.local/bin`). You can verify this by running `command -v <agent_name>` in your terminal.

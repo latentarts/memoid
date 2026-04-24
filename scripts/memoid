@@ -58,6 +58,7 @@ shift
 
 if ! command -v "$AGENT_CMD" >/dev/null 2>&1; then
   printf "Error: Agent command '%s' not found in PATH\n" "$AGENT_CMD" >&2
+  printf "Current PATH: %s\n" "$PATH" >&2
   exit 1
 fi
 

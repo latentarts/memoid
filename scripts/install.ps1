@@ -53,56 +53,7 @@ Write-Success "CLI 'memoid' installed to $DestFile"
 
 # 5. MCP Setup
 Write-Host ""
-Write-Info "Scanning for AI agents to configure MCP..."
-$AgentsFound = 0
-
-function Update-McpConfig ($ConfigFile) {
-    Write-Info "Creating backup: ${ConfigFile}.bak"
-    Copy-Item $ConfigFile "${ConfigFile}.bak" -Force
-
-    $Config = Get-Content $ConfigFile | ConvertFrom-Json
-    if (-not $Config.mcpServers) { $Config | Add-Member -MemberType NoteProperty -Name "mcpServers" -Value @{} }
-
-    $McpEntry = @{
-        command = "uv"
-        args = @("--directory", $InstallPath, "run", "scripts/mcp_server.py")
-    }
-
-    if ($Config.mcpServers.PSObject.Properties.Name -contains "memoid") {
-        $Config.mcpServers.memoid = $McpEntry
-    } else {
-        $Config.mcpServers | Add-Member -MemberType NoteProperty -Name "memoid" -Value $McpEntry
-    }
-
-    $Config | ConvertTo-Json -Depth 10 | Set-Content $ConfigFile
-}
-
-# --- Check Claude Desktop ---
-$ClaudeConfig = Join-Path $env:APPDATA "Claude\claude_desktop_config.json"
-if (Test-Path $ClaudeConfig) {
-    $AgentsFound++
-    $Confirm = Read-Host "Found Claude Desktop configuration. Install Memoid MCP? [Y/n]"
-    if ($Confirm -notmatch "^[Nn]") {
-        Update-McpConfig $ClaudeConfig
-        Write-Success "Claude Desktop MCP configured."
-    }
-}
-
-# --- Check OpenCode ---
-$OpenCodeConfig = Join-Path $HOME ".opencode\config.json"
-if (Test-Path $OpenCodeConfig) {
-    $AgentsFound++
-    $Confirm = Read-Host "Found OpenCode configuration. Install Memoid MCP? [Y/n]"
-    if ($Confirm -notmatch "^[Nn]") {
-        Update-McpConfig $OpenCodeConfig
-        Write-Success "OpenCode MCP configured."
-    }
-}
-
-if ($AgentsFound -eq 0) {
-    Write-Warn "No common AI agent configurations (Claude Desktop, etc.) were found automatically."
-    Write-Info "To set up MCP manually, refer to the README.md in $InstallPath"
-}
+Write-Info "To set up Memoid as an MCP server for your AI agent, please refer to the instructions in the README.md"
 
 Write-Success "`nMemoid installation complete!"
 Write-Info "Path: $InstallPath"
