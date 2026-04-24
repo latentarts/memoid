@@ -95,11 +95,23 @@ If you prefer to do it yourself:
 2. **Initialize**: `cd ~/memoid && ./scripts/memoid init`
 3. **Update**: Keep your brain up to date with `./scripts/memoid update`
 4. **Direct Access (Local)**: To work **inside** your knowledge base repo (e.g., to reorganize the wiki), run: `memoid gemini`
-5. **Global Access (Cross-Project)**: Set up the [MCP Server](#integrations) in your agent's config.
+5. **Global Access (Cross-Project)**: Set up the [MCP Server](#-mcp-setup) in your agent's config.
 
 ---
 
 ## 💡 Usage Examples
+
+### Coexistence: Local CLI vs. MCP
+
+You may find yourself running an AI agent (like Gemini CLI) directly inside the Memoid repository while *also* having the Memoid MCP server enabled in your agent's configuration.
+
+**Do they compete?** No. They are designed to coexist:
+
+- **No Technical Conflict**: There is no file-locking or process competition that will cause crashes.
+- **Functional Cooperation**: The MCP server provides high-level "Memoid-native" tools (`memoid_ingest`, `memoid_recall`) that automate several manual steps.
+- **Converged Workflow**: When both are available, use the **MCP tools** for standard memory operations (ingesting, logging, searching) and use your **native agent tools** (read, write, grep) for low-level repository maintenance or structural refactoring.
+
+---
 
 ### Case A: Working in another project (via MCP)
 
@@ -223,12 +235,6 @@ Memoid doesn't use complex code for logic; it uses Markdown instructions in the 
 
 ---
 
-## 📜 License
-
-MIT - Created by [prods](https://github.com/latentarts)
-
----
-
 ## 🔌 MCP Setup
 
 Memoid uses the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) to provide your global brain to any AI agent. To enable this, you must add Memoid as a server in your agent's configuration.
@@ -268,7 +274,7 @@ Edit your `opencode.json` (usually at `~/.config/opencode/opencode.json`):
 ```
 
 #### **Gemini CLI / Codex CLI**
-These CLIs typically use a `settings.json` or `.mcp.json` file. Ensure they are configured to point to the Memoid MCP server:
+These CLIs typically use a `~/.gemini/settings.json` file. Ensure they are configured to point to the Memoid MCP server:
 
 ```json
 {
@@ -296,3 +302,9 @@ sudo npm install -g @openai/codex
 
 **For other CLIs:**
 Ensure the binary is in your `$PATH` (e.g., in `/usr/local/bin` or `~/.local/bin`). You can verify this by running `command -v <agent_name>` in your terminal.
+
+---
+
+## 📜 License
+
+MIT - Created by [prods](https://github.com/latentarts)
