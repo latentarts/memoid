@@ -37,7 +37,7 @@ By combining **Karpathy’s LLM Wiki** and **MemPalace**, Memoid offers:
 ### Feature Glossary
 
 - **Markdown-First**: Knowledge is stored in human-readable `.md` files, making it easy to browse in Obsidian, VS Code, or a terminal.
-- **Git-Native**: Uses standard Git for version control. **Note**: The `memory/` folder is excluded from the core Memoid engine repo by default, allowing you to initialize it as its own independent Git repository for private, versioned knowledge.
+- **Git-Native**: Uses standard Git for version control. **Note**: most generated `memory/` content is ignored by the core Memoid engine repo by default, so you can keep the engine code and your private knowledge lifecycle separate.
 - **Immutable Raw Sources**: Original documents (articles, transcripts) are never edited, serving as the permanent "ground truth" to back up wiki claims.
 - **Maintained Wiki Synthesis**: Instead of just searching documents, the agent compiles and improves high-level "Entity" and "Concept" pages over time.
 - **Evidence & Session Records**: A durable trail of session logs and source notes that explains exactly *how* and *why* a piece of knowledge was added.
@@ -94,44 +94,119 @@ If you prefer to do it yourself, `memoid init` remains a required manual step af
 1. **Clone**: `git clone https://github.com/latentarts/memoid.git ~/memoid`
 2. **Initialize**: `cd ~/memoid && ./scripts/memoid init`
 3. **Update**: Keep your brain up to date with `./scripts/memoid update`
-4. **Direct Access (Local)**: To work **inside** your knowledge base repo (e.g., to reorganize the wiki), run: `memoid gemini`
+4. **Direct Access (Local)**: To work **inside** your knowledge base repo (e.g., to reorganize the wiki), run your agent via the Memoid CLI, for example: `memoid gemini`. This opens the agent in the Memoid repo root.
 5. **Global Access (Cross-Project)**: Set up the [MCP Server](#-mcp-setup) in your agent's config.
+
+---
+
+## ▶️ Accessing Memoid
+
+After installation, the main local entrypoint is the `memoid` CLI. Running `memoid <agent>` opens your agent directly in the Memoid repo root, which is the preferred way to do in-repo maintenance and protocol-driven work.
+
+### Linux / macOS
+
+```bash
+memoid claude
+memoid gemini
+memoid codex
+```
+
+### Windows (PowerShell)
+
+```powershell
+memoid claude
+memoid gemini
+memoid codex
+```
+
+If the `memoid` command is not found, make sure the install location for the launcher was added to your `PATH`, then open a new shell and try again.
 
 ---
 
 ## 💡 Usage Examples
 
-### Coexistence: Local CLI vs. MCP
+### Two Operating Modes
 
-You may find yourself running an AI agent (like Gemini CLI) directly inside the Memoid repository while *also* having the Memoid MCP server enabled in your agent's configuration.
+Memoid has two distinct modes. The right one depends on your current working directory.
 
-**Do they compete?** No. They are designed to coexist:
+- **Inside the Memoid repo (`~/memoid`)**: Use native tools and protocols. The agent should read `AGENTS.md`, follow `WAKE_UP.md`, and work directly with local files.
+- **Outside the Memoid repo (another project)**: Use the Memoid MCP as a remote interface to your global memory. This is for recall, bounded orientation, and deliberate filing back into Memoid.
 
-- **No Technical Conflict**: There is no file-locking or process competition that will cause crashes.
-- **Functional Cooperation**: The MCP server provides high-level "Memoid-native" tools (`memoid_ingest`, `memoid_recall`) that automate several manual steps.
-- **Converged Workflow**: When both are available, use the **MCP tools** for standard memory operations (ingesting, logging, searching) and use your **native agent tools** (read, write, grep) for low-level repository maintenance or structural refactoring.
+They can coexist in the same agent configuration, but they do **not** serve the same purpose.
 
----
+- **Native in-repo mode** is the full-fidelity workflow: wake-up, protocol execution, repo-wide maintenance, richer judgment, and full lint/audit behavior.
+- **MCP mode** is the remote access workflow: bounded wake-up, disciplined retrieval, scoped writes, and explicit audits when requested.
 
-### Case A: Working in another project (via MCP)
+### Inside the Repo: Native Protocol Workflow
 
-*Scenario: You are in `~/projects/my-app` and need help.*
+*Scenario: You are in `~/memoid` and want to maintain or reorganize your brain.*
+
+**Prompt:** "Wake up and tell me what state this brain is in."
+
+> **AI Action:** Checks initialization, reads `memory/wiki/IDENTITY.md`, `memory/wiki/ESSENTIAL_STORY.md`, and `AGENTS.md`, then follows `protocols/WAKE_UP.md`.
+
+**Prompt:** "Find everything relevant to retrieval discipline and update the canonical page."
+
+> **AI Action:** Uses native repo tools (`rg`, file reads, direct edits) and follows `protocols/RETRIEVAL.md` and `protocols/FILING.md` instead of the MCP.
+
+**Prompt:** "Audit the wiki for contradictions and missing evidence links."
+
+> **AI Action:** Runs the native maintenance path from `protocols/LINT.md`, which is the preferred path for full maintenance work.
+
+**Prompt:** "Ingest this new source and update the right pages."
+
+> **AI Action:** Follows the native ingest protocol in `protocols/INGEST.md` or `protocols/INGEST_CODE.md`, then verifies and files the results locally.
+
+### Outside the Repo: MCP Recall and Filing
+
+*Scenario: You are in `~/projects/my-app` and want to consult or update your global Memoid memory without leaving the current project.*
 
 **Prompt:** "Search my Memoid for that OAuth2 pattern we used last month."
 
-> **AI Action:** Calls `memoid_recall` to find the code in your brain.
+> **AI Action:** Calls `memoid_recall` to follow the retrieval ladder through `INDEX.md`, relevant wiki pages, linked evidence, and raw sources only if explicitly needed.
+
+**Prompt:** "Wake up my Memoid context before we plan this migration."
+
+> **AI Action:** Calls `memoid_wake_up` to load bounded startup context (`IDENTITY.md`, `ESSENTIAL_STORY.md`, and optionally `INDEX.md`), then uses `memoid_recall` if deeper retrieval is needed.
+
+**Prompt:** "Did I ever document a retry pattern for API clients?"
+
+> **AI Action:** Uses `memoid_recall` as disposable working context for the current task. Nothing is saved back to Memoid unless you explicitly ask for it.
 
 **Prompt:** "Document this bug fix in my Memoid."
 
-> **AI Action:** Calls `memoid_ingest` to save the logic into your brain's `raw/` and `evidence/` folders.
+> **AI Action:** Calls `memoid_ingest` to save the source, create a source note, update a wiki page, refresh the index/log, and run scoped lint on the affected artifacts.
 
-### Case B: Maintaining your Brain (Direct CLI)
+**Prompt:** "Update the Memoid concept page with what we just learned."
 
-*Scenario: You are in `~/memoid` and want to clean up.*
+> **AI Action:** Calls `memoid_edit_wiki` to update the canonical wiki page while preserving structure, source links, index linkage, and scoped lint checks.
 
-**Prompt:** "Audit the wiki for any contradictions and update the Index."
+**Prompt:** "Save a durable note from this session in Memoid."
 
-> **AI Action:** Follows `protocols/LINT.md` to check consistency.
+> **AI Action:** Calls `memoid_log` to file a structured session record under `memory/evidence/sessions/` and append a concise `LOG.md` entry.
+
+**Prompt:** "Run a Memoid audit on the pages we touched."
+
+> **AI Action:** Calls `memoid_audit` to create an explicit audit note under `memory/evidence/audits/`. This is optional maintenance from outside the repo, not a replacement for native full-repo maintenance.
+
+### Rule of Thumb
+
+- If you are **inside `~/memoid`**, prefer native tools and protocols.
+- If you are **outside `~/memoid`**, prefer the MCP for lookup and deliberate filing.
+- Use **`memoid_wake_up`** for broader outside-repo orientation.
+- Use **`memoid_recall`** for narrow outside-repo lookup.
+- Use **native in-repo maintenance** when you want the strongest audit, restructuring, or protocol-heavy work.
+
+### Current MCP Tool Surface
+
+The current Memoid MCP server exposes these tools:
+
+- **`memoid_wake_up`**: Bounded startup context for outside-repo use.
+- **`memoid_recall`**: Retrieval-ladder search with trust signals.
+- **`memoid_ingest`**: Raw -> evidence -> wiki -> index -> log pipeline with scoped lint.
+- **`memoid_edit_wiki`**: Structured canonical-page updates with source/index preservation.
+- **`memoid_log`**: Session filing into `memory/evidence/sessions/` plus `LOG.md`.
+- **`memoid_audit`**: Explicit outside-repo maintenance that writes to `memory/evidence/audits/`.
 
 ---
 
@@ -142,7 +217,7 @@ You may find yourself running an AI agent (like Gemini CLI) directly inside the 
 | `memoid init`    | Prepares the directory structure. Safe to run multiple times; it will not delete existing data.                         |
 | `memoid update`  | Updates the engine and protocols. **Never** overwrites your knowledge base (`memory/` folder).                          |
 | `memoid mcp`     | Launches the MCP server for global connectivity.                                                                        |
-| `memoid <agent>` | Launches an agent (e.g., `gemini`, `claude`, `codex`) inside the brain. Shortcut for running the agent in the `~/memoid` folder. |
+| `memoid <agent>` | Launches an agent (e.g., `gemini`, `claude`, `codex`) in the Memoid repo root. Shortcut for opening the agent directly on `~/memoid`. |
 | `memoid version` | Displays the current version.                                                                                           |
 
 ---
@@ -239,6 +314,8 @@ Memoid doesn't use complex code for logic; it uses Markdown instructions in the 
 ## 🔌 MCP Setup
 
 Memoid uses the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) to provide your global brain to any AI agent. To enable this, you must add Memoid as a server in your agent's configuration.
+
+Once connected, the MCP server gives outside-repo agents bounded wake-up, disciplined retrieval, deliberate filing, and explicit audits without requiring them to operate directly inside `~/memoid`.
 
 ### Configuration for AI Agents
 

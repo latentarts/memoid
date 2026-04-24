@@ -22,7 +22,7 @@ To ensure the workspace is ready, the Orchestrator **must** execute this sequenc
 
 ### The Work Lifecycle
 
-1. **Research**: Use `mcp_cocoindex-code_search`, the Memoid MCP, or `grep` to find existing knowledge.
+1. **Research**: When working inside the Memoid repository directory, use native local tools available in the repo/environment (for example `rg`, `grep`, `find`, local scripts, and direct file reads). Do **not** use the Memoid MCP from inside this repository. Outside the repo, use the best available retrieval path for the task.
 2. **Execute**: Follow the relevant **Protocol** in `protocols/`.
 3. **Audit**: Run the `LINT.md` protocol to ensure consistency, especially after significant changes.
 4. **Persist**: 
@@ -65,7 +65,7 @@ Each specialized agent maintains a `DIARY.md`. This is for **meta-learning**, no
 | `LINT.md` | System health and consistency check. |
 | `INIT.md` | Prepare the repo for first use. |
 
-*Note: Operational logic lives in the Protocols. The agent is responsible for executing these steps using its available tools (Native tools or the Memoid MCP).*
+*Note: Operational logic lives in the Protocols. When the current working directory is the Memoid repository, execute them with native local tools rather than the Memoid MCP. Only use the Memoid MCP from outside the repo when native repo access is not the operating context.*
 
 ---
 
@@ -75,3 +75,4 @@ Each specialized agent maintains a `DIARY.md`. This is for **meta-learning**, no
 2. **Fact Lifecycle**: Facts live in entity pages. Move old facts to `History`, never delete.
 3. **Linkage**: All durable claims in the Wiki *should* link back to `memory/evidence/`.
 4. **Context Discipline**: Do not preload the entire wiki. Drill down only when needed.
+5. **Repo-Local Tooling Rule**: If the agent is operating from within the Memoid repository directory, do not use the Memoid MCP. Prefer the native tools available in the repository and local environment.

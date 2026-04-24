@@ -87,5 +87,6 @@ if ! command -v "$AGENT_CMD" >/dev/null 2>&1; then
   exit 1
 fi
 
-# Execute agent command in the current repository
+# Execute agent command from the Memoid repository root
+cd "$ROOT_DIR"
 exec "$AGENT_CMD" "$@"

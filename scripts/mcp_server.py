@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import os
 import datetime
+import re
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Set
 from mcp.server.fastmcp import FastMCP
 
 # Initialize FastMCP server
@@ -14,129 +15,1045 @@ MEMORY_DIR = ROOT / "memory"
 RAW_DIR = MEMORY_DIR / "raw"
 WIKI_DIR = MEMORY_DIR / "wiki"
 EVIDENCE_DIR = MEMORY_DIR / "evidence"
+INDEX_PATH = WIKI_DIR / "INDEX.md"
 
-@mcp.tool()
-def memoid_recall(query: str, limit: int = 10) -> str:
-    """
-    Searches the Memoid wiki and evidence directories for the given query.
-    Returns the content of matching markdown files.
-    """
-    results = []
-    # Search in wiki and evidence
-    search_paths = [WIKI_DIR, EVIDENCE_DIR]
-    
-    for search_path in search_paths:
-        if not search_path.exists():
+
+def _tokenize(text: str) -> List[str]:
+    return [token for token in re.findall(r"[A-Za-z0-9_./-]+", text.lower()) if token]
+
+
+def _score_text(query_tokens: List[str], text: str, name: str = "") -> int:
+    haystack = f"{name}\n{text}".lower()
+    score = 0
+    for token in query_tokens:
+        if token in haystack:
+            score += 1
+    return score
+
+
+def _extract_markdown_links(text: str) -> List[str]:
+    return re.findall(r"\[[^\]]+\]\(([^)]+)\)", text)
+
+
+def _resolve_repo_relative(markdown_target: str, base_dir: Path) -> Optional[Path]:
+    target = markdown_target.strip()
+    if not target or target.startswith(("http://", "https://", "mailto:", "#")):
+        return None
+
+    target = target.split("#", 1)[0]
+    candidate = (base_dir / target).resolve()
+    try:
+        candidate.relative_to(ROOT)
+    except ValueError:
+        return None
+    return candidate
+
+
+def _find_index_candidates(query_tokens: List[str], limit: int) -> List[Path]:
+    if not INDEX_PATH.exists():
+        return []
+
+    index_text = INDEX_PATH.read_text(encoding="utf-8")
+    candidates: Dict[Path, int] = {}
+    for line in index_text.splitlines():
+        line_links = _extract_markdown_links(line)
+        if not line_links:
             continue
-        for md_file in search_path.glob("**/*.md"):
-            try:
-                content = md_file.read_text(encoding="utf-8")
-                if query.lower() in content.lower() or query.lower() in md_file.name.lower():
-                    rel_path = md_file.relative_to(ROOT)
-                    results.append(f"--- File: {rel_path} ---\n{content}\n")
-                    if len(results) >= limit:
-                        break
-            except Exception as e:
+        for target in line_links:
+            resolved = _resolve_repo_relative(target, INDEX_PATH.parent)
+            if not resolved or not resolved.is_file() or resolved.suffix != ".md":
                 continue
-        if len(results) >= limit:
+            score = _score_text(query_tokens, line, resolved.name)
+            if score > 0:
+                candidates[resolved] = max(candidates.get(resolved, 0), score)
+
+    if not candidates:
+        return []
+
+    ranked = sorted(
+        candidates.items(),
+        key=lambda item: (-item[1], item[0].name.lower()),
+    )
+    return [path for path, _ in ranked[:limit]]
+
+
+def _rank_wiki_pages(query_tokens: List[str], seed_pages: List[Path], limit: int) -> List[Path]:
+    ranked: Dict[Path, int] = {}
+    visited: Set[Path] = set()
+
+    for page in seed_pages:
+        if page in visited or not page.is_file():
+            continue
+        visited.add(page)
+        content = page.read_text(encoding="utf-8")
+        score = _score_text(query_tokens, content, page.name)
+        ranked[page] = max(ranked.get(page, 0), score + 5)
+
+        for target in _extract_markdown_links(content):
+            resolved = _resolve_repo_relative(target, page.parent)
+            if not resolved or not resolved.is_file() or resolved.suffix != ".md":
+                continue
+            try:
+                resolved.relative_to(WIKI_DIR)
+            except ValueError:
+                continue
+            linked_content = resolved.read_text(encoding="utf-8")
+            linked_score = _score_text(query_tokens, linked_content, resolved.name)
+            if linked_score > 0:
+                ranked[resolved] = max(ranked.get(resolved, 0), linked_score)
+
+    if not ranked:
+        return []
+
+    ordered = sorted(ranked.items(), key=lambda item: (-item[1], item[0].name.lower()))
+    return [path for path, _ in ordered[:limit]]
+
+
+def _collect_linked_evidence(query_tokens: List[str], wiki_pages: List[Path], limit: int) -> List[Path]:
+    ranked: Dict[Path, int] = {}
+
+    for page in wiki_pages:
+        content = page.read_text(encoding="utf-8")
+        for target in _extract_markdown_links(content):
+            resolved = _resolve_repo_relative(target, page.parent)
+            if not resolved or not resolved.is_file() or resolved.suffix != ".md":
+                continue
+            try:
+                resolved.relative_to(EVIDENCE_DIR)
+            except ValueError:
+                continue
+            evidence_content = resolved.read_text(encoding="utf-8")
+            score = _score_text(query_tokens, evidence_content, resolved.name)
+            if score > 0:
+                ranked[resolved] = max(ranked.get(resolved, 0), score)
+
+    if not ranked:
+        return []
+
+    ordered = sorted(ranked.items(), key=lambda item: (-item[1], item[0].name.lower()))
+    return [path for path, _ in ordered[:limit]]
+
+
+def _collect_linked_raw(query_tokens: List[str], evidence_pages: List[Path], limit: int) -> List[Path]:
+    ranked: Dict[Path, int] = {}
+
+    for page in evidence_pages:
+        content = page.read_text(encoding="utf-8")
+        for target in _extract_markdown_links(content):
+            resolved = _resolve_repo_relative(target, page.parent)
+            if not resolved or not resolved.is_file():
+                continue
+            try:
+                resolved.relative_to(RAW_DIR)
+            except ValueError:
+                continue
+            raw_content = resolved.read_text(encoding="utf-8")
+            score = _score_text(query_tokens, raw_content, resolved.name)
+            if score > 0:
+                ranked[resolved] = max(ranked.get(resolved, 0), score)
+
+    if not ranked:
+        return []
+
+    ordered = sorted(ranked.items(), key=lambda item: (-item[1], item[0].name.lower()))
+    return [path for path, _ in ordered[:limit]]
+
+
+def _render_section(title: str, files: List[Path]) -> str:
+    if not files:
+        return f"## {title}\n- None"
+    lines = [f"## {title}"]
+    for file_path in files:
+        lines.append(f"- {file_path.relative_to(ROOT)}")
+    return "\n".join(lines)
+
+
+def _render_file_dump(title: str, files: List[Path]) -> str:
+    if not files:
+        return ""
+    parts = [f"## {title}"]
+    for file_path in files:
+        content = file_path.read_text(encoding="utf-8")
+        parts.append(f"--- File: {file_path.relative_to(ROOT)} ---\n{content}\n")
+    return "\n".join(parts).rstrip()
+
+
+def _path_is_indexed(page_path: Path) -> bool:
+    if not INDEX_PATH.exists():
+        return False
+    needle = f"(./{page_path.relative_to(WIKI_DIR).as_posix()})"
+    return needle in INDEX_PATH.read_text(encoding="utf-8")
+
+
+def _page_trust_report(page_path: Path) -> Dict[str, Any]:
+    content = page_path.read_text(encoding="utf-8")
+    links = [_resolve_repo_relative(target, page_path.parent) for target in _extract_markdown_links(content)]
+    evidence_links = [link for link in links if link and link.is_file() and link.is_relative_to(EVIDENCE_DIR)]
+    raw_links = [link for link in links if link and link.is_file() and link.is_relative_to(RAW_DIR)]
+    issues: List[str] = []
+
+    if not _path_is_indexed(page_path):
+        issues.append("not indexed")
+    if "## Sources" not in content:
+        issues.append("missing sources section")
+    if not evidence_links:
+        issues.append("no evidence links")
+    if page_path.parent.name == "entities":
+        for required in ("## Current", "## History"):
+            if required not in content:
+                issues.append(f"missing {required}")
+
+    score = 100
+    score -= min(len(issues) * 20, 80)
+    if raw_links:
+        score += 5
+    score = max(5, min(score, 100))
+
+    if score >= 85:
+        confidence = "high"
+    elif score >= 60:
+        confidence = "medium"
+    else:
+        confidence = "low"
+
+    return {
+        "path": page_path.relative_to(ROOT).as_posix(),
+        "indexed": _path_is_indexed(page_path),
+        "evidence_links": len(evidence_links),
+        "raw_links": len(raw_links),
+        "confidence": confidence,
+        "issues": issues,
+    }
+
+
+def _render_trust_section(wiki_pages: List[Path]) -> str:
+    lines = ["## Trust Signals"]
+    if not wiki_pages:
+        lines.append("- No wiki pages retrieved.")
+        return "\n".join(lines)
+    for page in wiki_pages:
+        report = _page_trust_report(page)
+        issue_text = ", ".join(report["issues"]) if report["issues"] else "none"
+        lines.append(
+            f"- `{report['path']}`: confidence={report['confidence']}, indexed={'yes' if report['indexed'] else 'no'}, "
+            f"evidence_links={report['evidence_links']}, raw_links={report['raw_links']}, issues={issue_text}"
+        )
+    return "\n".join(lines)
+
+
+def _scoped_lint_report(page_paths: List[Path]) -> str:
+    findings = _lint_modified_pages(page_paths)
+    if not findings:
+        return "Scoped Lint: clean"
+    return "Scoped Lint:\n" + "\n".join(findings)
+
+
+def _read_if_exists(path: Path) -> str:
+    return path.read_text(encoding="utf-8") if path.exists() else ""
+
+
+def _wake_up_summary(identity_text: str, story_text: str, next_reads: List[Path]) -> str:
+    active_threads: List[str] = []
+    in_active = False
+    for line in story_text.splitlines():
+        if line.strip() == "## Active Threads":
+            in_active = True
+            continue
+        if in_active and line.startswith("## "):
             break
-            
-    if not results:
-        return f"No results found for query: '{query}'"
-    
-    return "\n".join(results)
+        if in_active and line.strip().startswith("- "):
+            active_threads.append(line.strip()[2:])
+
+    open_questions: List[str] = []
+    in_questions = False
+    for line in story_text.splitlines():
+        if line.strip() == "## Open Questions":
+            in_questions = True
+            continue
+        if in_questions and line.startswith("## "):
+            break
+        if in_questions and line.strip().startswith("- "):
+            open_questions.append(line.strip()[2:])
+
+    lines = [
+        "## Wake-Up Summary",
+        f"- System purpose: {'Memoid is a markdown-first memory system for an AI agent.' if identity_text else 'Unavailable'}",
+        f"- Active threads: {('; '.join(active_threads[:3])) if active_threads else 'None listed'}",
+        f"- Open questions: {('; '.join(open_questions[:3])) if open_questions else 'None listed'}",
+        f"- Read next: {(', '.join(path.relative_to(ROOT).as_posix() for path in next_reads)) if next_reads else 'Use memoid_recall for task-specific retrieval'}",
+    ]
+    return "\n".join(lines)
+
+
+def _wake_up_next_reads(query: Optional[str], limit: int = 2) -> List[Path]:
+    if not query:
+        return []
+    query_tokens = _tokenize(query)
+    if not query_tokens:
+        return []
+    candidates = _find_index_candidates(query_tokens, limit)
+    return [path for path in candidates if path not in {WIKI_DIR / "IDENTITY.md", WIKI_DIR / "ESSENTIAL_STORY.md"}][:limit]
+
 
 @mcp.tool()
-def memoid_ingest(content: str, source_name: str, metadata: Optional[Dict[str, Any]] = None) -> str:
+def memoid_wake_up(query: Optional[str] = None, include_index: bool = True, next_read_limit: int = 2) -> str:
     """
-    Ingests new content into Memoid.
-    Saves the raw content, creates a source note, and logs the action.
+    Reconstructs bounded Memoid state for outside-repo use.
+    Returns IDENTITY.md and ESSENTIAL_STORY.md, optionally INDEX.md, plus a small next-read hint set.
+    """
+    identity_path = WIKI_DIR / "IDENTITY.md"
+    story_path = WIKI_DIR / "ESSENTIAL_STORY.md"
+    next_reads = _wake_up_next_reads(query, next_read_limit)
+
+    identity_text = _read_if_exists(identity_path)
+    story_text = _read_if_exists(story_path)
+    index_text = _read_if_exists(INDEX_PATH) if include_index else ""
+
+    sections = [
+        "# Wake-Up Context",
+        _wake_up_summary(identity_text, story_text, next_reads),
+        f"## Required Reads\n- {identity_path.relative_to(ROOT).as_posix()}\n- {story_path.relative_to(ROOT).as_posix()}",
+    ]
+    if include_index:
+        sections.append(f"## Optional Reads\n- {INDEX_PATH.relative_to(ROOT).as_posix()}")
+    elif next_reads:
+        sections.append("## Optional Reads\n- Index skipped (`include_index=False`)")
+    if next_reads:
+        sections.append(
+            "## Suggested Next Reads\n" + "\n".join(f"- {path.relative_to(ROOT).as_posix()}" for path in next_reads)
+        )
+
+    detail_sections = [
+        f"## Identity\n--- File: {identity_path.relative_to(ROOT)} ---\n{identity_text}",
+        f"## Essential Story\n--- File: {story_path.relative_to(ROOT)} ---\n{story_text}",
+    ]
+    if include_index:
+        detail_sections.append(f"## Index\n--- File: {INDEX_PATH.relative_to(ROOT)} ---\n{index_text}")
+    if next_reads:
+        detail_sections.append(_render_file_dump("Suggested Page Content", next_reads))
+
+    return "\n\n".join(sections + detail_sections)
+
+@mcp.tool()
+def memoid_recall(query: str, limit: int = 10, allow_raw: bool = False) -> str:
+    """
+    Retrieves Memoid context using the retrieval ladder:
+    index -> relevant wiki pages -> linked evidence pages -> raw sources.
+    Raw sources are only consulted when allow_raw=True.
+    """
+    query_tokens = _tokenize(query)
+    if not query_tokens:
+        return "Query must contain at least one searchable token."
+
+    index_candidates = _find_index_candidates(query_tokens, limit)
+    wiki_pages = _rank_wiki_pages(query_tokens, index_candidates, limit)
+    evidence_pages = _collect_linked_evidence(query_tokens, wiki_pages, limit)
+    raw_files = _collect_linked_raw(query_tokens, evidence_pages, limit) if allow_raw else []
+
+    if not index_candidates and not wiki_pages and not evidence_pages and not raw_files:
+        return f"No results found for query: '{query}'"
+
+    sections = [
+        f"# Retrieval Results for: {query}",
+        _render_section("Index Hits", index_candidates),
+        _render_section("Wiki Pages Used", wiki_pages),
+        _render_section("Evidence Pages Used", evidence_pages),
+        _render_trust_section(wiki_pages),
+    ]
+
+    if allow_raw:
+        sections.append(_render_section("Raw Sources Used", raw_files))
+    else:
+        sections.append("## Raw Sources Used\n- Skipped (`allow_raw=False`)")
+
+    detail_sections = [
+        _render_file_dump("Wiki Content", wiki_pages),
+        _render_file_dump("Evidence Content", evidence_pages),
+    ]
+    if allow_raw:
+        detail_sections.append(_render_file_dump("Raw Content", raw_files))
+
+    return "\n\n".join(sections + [section for section in detail_sections if section])
+
+
+def _slugify(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    return slug or "untitled"
+
+
+def _format_metadata(metadata: Optional[Dict[str, Any]]) -> str:
+    if not metadata:
+        return ""
+    lines = []
+    for key, value in metadata.items():
+        lines.append(f"- **{key}**: {value}")
+    return "\n".join(lines)
+
+
+def _relative_link(from_dir: Path, to_path: Path) -> str:
+    return os.path.relpath(to_path, start=from_dir).replace(os.sep, "/")
+
+
+def _default_wiki_path(source_name: str, metadata: Optional[Dict[str, Any]]) -> str:
+    page_type = "concepts"
+    if metadata:
+        candidate = str(metadata.get("page_type", "")).strip().lower()
+        if candidate in {"entities", "concepts", "domains", "comparisons", "syntheses"}:
+            page_type = candidate
+    return f"{page_type}/{_slugify(source_name)}.md"
+
+
+def _section_template(page_type: str) -> List[str]:
+    templates = {
+        "entities": ["## Summary", "## Current", "## History", "## Relationships", "## Sources"],
+        "concepts": ["## Summary", "## Key Ideas", "## Variants", "## Tradeoffs", "## Sources"],
+        "domains": ["## Summary", "## Current", "## Relationships", "## Sources"],
+        "comparisons": ["## Summary", "## Criteria", "## Tradeoffs", "## Sources"],
+        "syntheses": ["## Summary", "## Key Ideas", "## Sources"],
+    }
+    return templates.get(page_type, ["## Summary", "## Notes", "## Sources"])
+
+
+def _evidence_section_template(category: str) -> List[str]:
+    templates = {
+        "session": ["## Context", "## Events", "## Findings", "## Decisions", "## Follow-ups", "## Affected Pages"],
+        "decision": ["## Decision", "## Date", "## Context", "## Rationale", "## Alternatives", "## Consequences", "## Sources"],
+        "audit": ["## Scope", "## Findings", "## Follow-ups", "## Affected Pages", "## Sources"],
+    }
+    return templates.get(category, ["## Context", "## Events", "## Findings", "## Decisions", "## Follow-ups", "## Affected Pages"])
+
+
+def _guess_page_type(page_path: str) -> str:
+    path = Path(page_path)
+    if path.parts:
+        first = path.parts[0].lower()
+        if first in {"entities", "concepts", "domains", "comparisons", "syntheses"}:
+            return first
+    return "concepts"
+
+
+def _ensure_sources_section(content: str) -> str:
+    if re.search(r"^## Sources\s*$", content, flags=re.MULTILINE):
+        return content
+    content = content.rstrip()
+    if content:
+        content += "\n\n## Sources\n"
+    else:
+        content = "## Sources\n"
+    return content
+
+
+def _normalize_md_path(path_str: str) -> str:
+    normalized = Path(path_str)
+    if normalized.suffix != ".md":
+        normalized = normalized.with_suffix(".md")
+    return normalized.as_posix()
+
+
+def _parse_markdown_sections(content: str) -> (str, Dict[str, str], List[str]):
+    lines = content.splitlines()
+    title = ""
+    sections: Dict[str, List[str]] = {}
+    order: List[str] = []
+    current_section: Optional[str] = None
+    preamble: List[str] = []
+
+    for line in lines:
+        if line.startswith("# "):
+            title = line[2:].strip()
+            continue
+        if line.startswith("## "):
+            current_section = line
+            if current_section not in sections:
+                sections[current_section] = []
+                order.append(current_section)
+            continue
+        if current_section is None:
+            preamble.append(line)
+        else:
+            sections[current_section].append(line)
+
+    if preamble:
+        sections["__preamble__"] = preamble
+
+    rendered_sections = {name: "\n".join(body).strip() for name, body in sections.items()}
+    return title, rendered_sections, order
+
+
+def _render_markdown_page(title: str, sections: Dict[str, str], order: List[str]) -> str:
+    parts = [f"# {title}", ""]
+    preamble = sections.get("__preamble__", "").strip()
+    if preamble:
+        parts.extend([preamble, ""])
+    for heading in order:
+        if heading == "__preamble__":
+            continue
+        parts.append(heading)
+        body = sections.get(heading, "").strip()
+        parts.append(body if body else "_TBD_")
+        parts.append("")
+    return "\n".join(parts).rstrip() + "\n"
+
+
+def _merge_block(existing: str, new_text: str, mode: str = "append") -> str:
+    existing = existing.strip()
+    new_text = new_text.strip()
+    if not existing:
+        return new_text
+    if not new_text:
+        return existing
+    if mode == "replace":
+        return new_text
+    if new_text in existing:
+        return existing
+    return f"{existing}\n\n{new_text}"
+
+
+def _merge_list_block(existing: str, items: List[str]) -> str:
+    existing_lines = [line.rstrip() for line in existing.splitlines() if line.strip()]
+    seen = set(existing_lines)
+    for item in items:
+        if item and item not in seen:
+            existing_lines.append(item)
+            seen.add(item)
+    return "\n".join(existing_lines).strip()
+
+
+def _ensure_named_sections(sections: Dict[str, str], order: List[str], expected: List[str]) -> None:
+    for heading in expected:
+        if heading not in sections:
+            sections[heading] = ""
+        if heading not in order:
+            order.append(heading)
+
+
+def _lint_modified_pages(page_paths: List[Path]) -> List[str]:
+    findings: List[str] = []
+    for page in page_paths:
+        if not page.exists() or page.suffix != ".md":
+            findings.append(f"- Missing page: `{page.relative_to(ROOT).as_posix()}`")
+            continue
+        content = page.read_text(encoding="utf-8")
+        requires_sources = (
+            page.is_relative_to(WIKI_DIR)
+            or page.parent.name in {"source-notes", "decisions", "audits"}
+        )
+        if requires_sources and not re.search(r"^## Sources\s*$", content, flags=re.MULTILINE):
+            findings.append(f"- Missing `## Sources` section: `{page.relative_to(ROOT).as_posix()}`")
+        if page.is_relative_to(WIKI_DIR):
+            if not _extract_markdown_links(content):
+                findings.append(f"- No linked evidence or related pages: `{page.relative_to(ROOT).as_posix()}`")
+            if page.parent.name == "entities":
+                for required in ("## Current", "## History", "## Sources"):
+                    if required not in content:
+                        findings.append(f"- Entity page missing `{required}`: `{page.relative_to(ROOT).as_posix()}`")
+        if page.is_relative_to(EVIDENCE_DIR) and "## Affected Pages" not in content and page.parent.name in {"sessions", "audits"}:
+            findings.append(f"- Evidence page missing `## Affected Pages`: `{page.relative_to(ROOT).as_posix()}`")
+    return findings
+
+
+def _append_source_link(content: str, page_dir: Path, source_note_path: Path) -> str:
+    content = _ensure_sources_section(content)
+    link = f"- [{source_note_path.stem}]({_relative_link(page_dir, source_note_path)})"
+    if link in content:
+        return content
+    return content.rstrip() + f"\n{link}\n"
+
+
+def _build_wiki_page(
+    page_path: str,
+    source_name: str,
+    target_path: Path,
+    source_note_path: Path,
+    summary: Optional[str],
+    metadata: Optional[Dict[str, Any]],
+    existing_content: Optional[str] = None,
+) -> str:
+    page_type = _guess_page_type(page_path)
+    if existing_content is not None:
+        content = existing_content.rstrip()
+        if summary and not re.search(r"^## Summary\s*$", content, flags=re.MULTILINE):
+            content = f"# {source_name}\n\n## Summary\n{summary}\n\n{content}".strip()
+        return _append_source_link(content, target_path.parent, source_note_path)
+
+    sections = _section_template(page_type)
+    lines = [f"# {source_name}", ""]
+    rendered_summary = summary or str(metadata.get("summary", "")).strip() if metadata else ""
+
+    for section in sections:
+        lines.append(section)
+        if section == "## Summary" and rendered_summary:
+            lines.append(rendered_summary)
+        elif section == "## Sources":
+            lines.append(f"- [{source_note_path.stem}]({_relative_link(target_path.parent, source_note_path)})")
+        else:
+            lines.append("_TBD_")
+        lines.append("")
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _ensure_index_entry(page_path: str, title: str, summary: str) -> bool:
+    if not INDEX_PATH.exists():
+        return False
+
+    index_text = INDEX_PATH.read_text(encoding="utf-8")
+    page_path_obj = Path(page_path)
+    section_name = _guess_page_type(page_path)
+    heading = f"## {section_name.capitalize()}"
+    entry = f"- [{page_path_obj.name}](./{page_path_obj.as_posix()}): {summary or title}"
+
+    if f"(./{page_path_obj.as_posix()})" in index_text:
+        return False
+
+    lines = index_text.splitlines()
+    insert_at = None
+    for idx, line in enumerate(lines):
+        if line.strip() == heading:
+            insert_at = idx + 1
+            while insert_at < len(lines) and lines[insert_at].startswith("- "):
+                insert_at += 1
+            break
+
+    if insert_at is None:
+        if lines and lines[-1] != "":
+            lines.append("")
+        lines.extend([heading, "", entry])
+    else:
+        while insert_at < len(lines) and lines[insert_at].strip() == "":
+            insert_at += 1
+        lines.insert(insert_at, entry)
+
+    INDEX_PATH.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    return True
+
+
+def _build_source_note(
+    source_name: str,
+    timestamp: str,
+    raw_file: Path,
+    source_note_path: Path,
+    summary: str,
+    metadata: Optional[Dict[str, Any]],
+    affected_pages: List[str],
+) -> str:
+    meta_block = _format_metadata(metadata)
+    affected = "\n".join(
+        f"- [memory/wiki/{page}]({_relative_link(source_note_path.parent, WIKI_DIR / page)})"
+        for page in affected_pages
+    ) or "- None yet"
+    lines = [
+        f"# Source Note: {source_name}",
+        "",
+        f"- **Ingested At**: {timestamp}",
+        f"- **Raw Path**: {raw_file.relative_to(ROOT).as_posix()}",
+    ]
+    if meta_block:
+        lines.extend(["", "## Metadata", meta_block])
+    lines.extend(
+        [
+            "",
+            "## Summary",
+            summary,
+            "",
+            "## Affected Pages",
+            affected,
+            "",
+            "## Sources",
+            f"- [raw source]({_relative_link(source_note_path.parent, raw_file)})",
+        ]
+    )
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _link_lines(from_dir: Path, targets: List[Path], label_prefix: str = "") -> List[str]:
+    lines: List[str] = []
+    for target in targets:
+        rel = _relative_link(from_dir, target)
+        label = label_prefix + target.name
+        lines.append(f"- [{label}]({rel})")
+    return lines
+
+
+def _append_log_entry(message: str) -> None:
+    with open(WIKI_DIR / "LOG.md", "a", encoding="utf-8") as f:
+        f.write(f"\n{message}")
+
+
+def _recent_log_paths(limit: int = 5) -> List[Path]:
+    if not (WIKI_DIR / "LOG.md").exists():
+        return []
+    log_text = (WIKI_DIR / "LOG.md").read_text(encoding="utf-8")
+    matches = re.findall(r"`(memory/wiki/[^`]+\.md)`", log_text)
+    paths: List[Path] = []
+    seen: Set[Path] = set()
+    for raw in reversed(matches):
+        candidate = ROOT / raw
+        if candidate.exists() and candidate not in seen:
+            seen.add(candidate)
+            paths.append(candidate)
+        if len(paths) >= limit:
+            break
+    return list(reversed(paths))
+
+
+def _orphan_wiki_pages() -> List[Path]:
+    if not INDEX_PATH.exists():
+        return []
+    index_text = INDEX_PATH.read_text(encoding="utf-8")
+    indexed = set()
+    for target in _extract_markdown_links(index_text):
+        resolved = _resolve_repo_relative(target, INDEX_PATH.parent)
+        if resolved and resolved.is_file() and resolved.suffix == ".md" and resolved.is_relative_to(WIKI_DIR):
+            indexed.add(resolved)
+    all_pages = [path for path in WIKI_DIR.glob("**/*.md") if path.name not in {"INDEX.md", "LOG.md", "IDENTITY.md", "ESSENTIAL_STORY.md"}]
+    return sorted([path for path in all_pages if path not in indexed], key=lambda p: p.as_posix())
+
+
+def _build_audit_note(scope: str, targets: List[Path], findings: List[str], follow_ups: List[str], audit_path: Path) -> str:
+    title = f"Audit: {audit_path.stem}"
+    sections = {
+        "## Scope": f"Mode: {scope}\n\nTargets:\n" + ("\n".join(f"- `{path.relative_to(ROOT).as_posix()}`" for path in targets) if targets else "- None"),
+        "## Findings": "\n".join(findings) if findings else "- No findings.",
+        "## Follow-ups": "\n".join(f"- {item}" for item in follow_ups) if follow_ups else "- None.",
+        "## Affected Pages": "\n".join(
+            f"- [memory/wiki/{path.relative_to(WIKI_DIR).as_posix()}]({_relative_link(audit_path.parent, path)})"
+            for path in targets
+            if path.is_relative_to(WIKI_DIR)
+        ) or "- None.",
+        "## Sources": f"- [memory/wiki/LOG.md]({_relative_link(audit_path.parent, WIKI_DIR / 'LOG.md')})",
+    }
+    order = _evidence_section_template("audit")
+    return _render_markdown_page(title, sections, order)
+
+@mcp.tool()
+def memoid_ingest(
+    content: str,
+    source_name: str,
+    metadata: Optional[Dict[str, Any]] = None,
+    summary: Optional[str] = None,
+    wiki_page_path: Optional[str] = None,
+) -> str:
+    """
+    Ingests new content into Memoid using the standard pipeline:
+    raw source -> source note -> wiki update -> index update -> log entry.
     """
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    safe_name = source_name.replace(" ", "_").replace("/", "_")
-    
+    safe_name = _slugify(source_name)
+
     # 1. Save Raw Source
     raw_file = RAW_DIR / "inbox" / f"{safe_name}.md"
     raw_file.parent.mkdir(parents=True, exist_ok=True)
     raw_file.write_text(content, encoding="utf-8")
-    
-    # 2. Create Source Note
+
+    # 2. Create or update a wiki page so ingest always leaves durable synthesis behind.
+    target_page = wiki_page_path or _default_wiki_path(source_name, metadata)
+    target_path = WIKI_DIR / target_page
+    if target_path.suffix != ".md":
+        target_path = target_path.with_suffix(".md")
+        target_page = target_path.relative_to(WIKI_DIR).as_posix()
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+
     source_note_path = EVIDENCE_DIR / "source-notes" / f"{safe_name}.md"
     source_note_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    meta_str = ""
-    if metadata:
-        for k, v in metadata.items():
-            meta_str += f"- **{k}**: {v}\n"
-            
-    source_note_content = f"""# Source Note: {source_name}
 
-- **Ingested At**: {timestamp}
-- **Raw Path**: memory/raw/inbox/{safe_name}.md
-{meta_str}
+    synthesized_summary = (summary or content[:500]).strip()
+    existing_content = target_path.read_text(encoding="utf-8") if target_path.exists() else None
+    wiki_content = _build_wiki_page(
+        target_page,
+        source_name,
+        target_path,
+        source_note_path,
+        synthesized_summary,
+        metadata,
+        existing_content=existing_content,
+    )
+    target_path.write_text(wiki_content, encoding="utf-8")
 
-## Summary
-(Auto-generated from ingest)
-{content[:500]}...
-"""
+    # 3. Create Source Note with explicit backlinks to affected pages.
+    source_note_content = _build_source_note(
+        source_name=source_name,
+        timestamp=timestamp,
+        raw_file=raw_file,
+        source_note_path=source_note_path,
+        summary=synthesized_summary,
+        metadata=metadata,
+        affected_pages=[target_page],
+    )
     source_note_path.write_text(source_note_content, encoding="utf-8")
-    
-    # 3. Log the action
+
+    # 4. Update the index when a new page is created or first linked.
+    created_page = existing_content is None
+    index_changed = _ensure_index_entry(target_page, source_name, synthesized_summary)
+
+    # 5. Log the action with affected artifacts.
     log_file = WIKI_DIR / "LOG.md"
-    log_entry = f"\n- {timestamp}: Ingested '{source_name}' via MCP."
+    page_rel = target_path.relative_to(ROOT).as_posix()
+    note_rel = source_note_path.relative_to(ROOT).as_posix()
+    raw_rel = raw_file.relative_to(ROOT).as_posix()
+    index_suffix = " (index updated)" if index_changed else ""
+    action = "created" if created_page else "updated"
+    log_entry = (
+        f"\n- {timestamp}: Ingested '{source_name}' via MCP. "
+        f"Wiki {action}: `{page_rel}`. Evidence: `{note_rel}`. Raw: `{raw_rel}`{index_suffix}."
+    )
     with open(log_file, "a", encoding="utf-8") as f:
         f.write(log_entry)
-        
-    return f"Successfully ingested '{source_name}'.\nRaw: {raw_file.relative_to(ROOT)}\nNote: {source_note_path.relative_to(ROOT)}"
+
+    lint_report = _scoped_lint_report([target_path, source_note_path])
+
+    return (
+        f"Successfully ingested '{source_name}'.\n"
+        f"Raw: {raw_rel}\n"
+        f"Note: {note_rel}\n"
+        f"Wiki: {page_rel}\n"
+        f"Index Updated: {'yes' if index_changed else 'no'}\n"
+        f"{lint_report}"
+    )
 
 @mcp.tool()
-def memoid_log(entry: str, category: str = "session") -> str:
+def memoid_log(
+    entry: str,
+    category: str = "session",
+    context: Optional[str] = None,
+    findings: Optional[List[str]] = None,
+    decisions: Optional[List[str]] = None,
+    follow_ups: Optional[List[str]] = None,
+    affected_page_paths: Optional[List[str]] = None,
+    sources: Optional[List[str]] = None,
+    essential_story_update: Optional[str] = None,
+) -> str:
     """
-    Appends a log entry to Memoid's LOG.md and a session file.
+    Files durable session knowledge into a structured evidence record and LOG.md.
     """
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     date_str = datetime.datetime.now().strftime("%Y-%m-%d")
-    
-    # 1. Update LOG.md
-    log_file = WIKI_DIR / "LOG.md"
-    log_entry = f"\n- {timestamp} [{category}]: {entry}"
-    with open(log_file, "a", encoding="utf-8") as f:
-        f.write(log_entry)
-        
-    # 2. Update Session Log
+
+    normalized_pages = [_normalize_md_path(path) for path in (affected_page_paths or [])]
+    page_paths = [WIKI_DIR / path for path in normalized_pages]
+
     session_file = EVIDENCE_DIR / "sessions" / f"{date_str}.md"
     session_file.parent.mkdir(parents=True, exist_ok=True)
-    
-    if not session_file.exists():
-        session_file.write_text(f"# Session Log: {date_str}\n", encoding="utf-8")
-        
-    with open(session_file, "a", encoding="utf-8") as f:
-        f.write(f"\n## {timestamp} ({category})\n{entry}\n")
-        
-    return f"Log entry added to {log_file.relative_to(ROOT)} and {session_file.relative_to(ROOT)}"
+    title = f"Session Log: {date_str}"
+    expected_sections = _evidence_section_template("session")
+    if session_file.exists():
+        existing_title, sections, order = _parse_markdown_sections(session_file.read_text(encoding="utf-8"))
+        title = existing_title or title
+    else:
+        sections, order = {}, []
+    _ensure_named_sections(sections, order, expected_sections)
+
+    event_block = f"### {timestamp} ({category})\n{entry}"
+    sections["## Events"] = _merge_block(sections.get("## Events", ""), event_block)
+    if context:
+        sections["## Context"] = _merge_block(sections.get("## Context", ""), context)
+    if findings:
+        sections["## Findings"] = _merge_list_block(sections.get("## Findings", ""), [f"- {item}" for item in findings])
+    if decisions:
+        sections["## Decisions"] = _merge_list_block(sections.get("## Decisions", ""), [f"- {item}" for item in decisions])
+    if follow_ups:
+        sections["## Follow-ups"] = _merge_list_block(sections.get("## Follow-ups", ""), [f"- {item}" for item in follow_ups])
+    if normalized_pages:
+        sections["## Affected Pages"] = _merge_list_block(
+            sections.get("## Affected Pages", ""),
+            [
+                f"- [memory/wiki/{path.relative_to(WIKI_DIR).as_posix()}]({_relative_link(session_file.parent, path)})"
+                for path in page_paths
+            ],
+        )
+
+    lint_findings = _lint_modified_pages(page_paths) if page_paths else []
+    if lint_findings:
+        sections["## Findings"] = _merge_list_block(sections.get("## Findings", ""), lint_findings)
+
+    session_file.write_text(_render_markdown_page(title, sections, order), encoding="utf-8")
+
+    if essential_story_update:
+        story_path = WIKI_DIR / "ESSENTIAL_STORY.md"
+        story_content = story_path.read_text(encoding="utf-8") if story_path.exists() else "# Essential Story\n"
+        if essential_story_update not in story_content:
+            story_content = story_content.rstrip() + f"\n\n## Session Update\n{essential_story_update}\n"
+            story_path.write_text(story_content, encoding="utf-8")
+
+    source_lines: List[str] = []
+    for source in sources or []:
+        source_path = Path(source)
+        resolved = source_path if source_path.is_absolute() else (ROOT / source_path)
+        if resolved.exists():
+            source_lines.extend(_link_lines(session_file.parent, [resolved]))
+        else:
+            source_lines.append(f"- {source}")
+    if source_lines:
+        sections["## Findings"] = _merge_list_block(sections.get("## Findings", ""), ["- Sources referenced:"] + source_lines)
+        session_file.write_text(_render_markdown_page(title, sections, order), encoding="utf-8")
+
+    log_summary = entry
+    if normalized_pages:
+        log_summary += f" Affected pages: {', '.join(f'`memory/wiki/{p}`' for p in normalized_pages)}."
+    if lint_findings:
+        log_summary += f" Lint findings: {len(lint_findings)}."
+    _append_log_entry(f"- {timestamp} [{category}]: {log_summary}")
+
+    response_lines = [
+        f"Filed entry in {session_file.relative_to(ROOT).as_posix()}",
+        f"Updated { (WIKI_DIR / 'LOG.md').relative_to(ROOT).as_posix() }",
+        _scoped_lint_report(page_paths + [session_file]),
+    ]
+    if essential_story_update:
+        response_lines.append(f"Updated { (WIKI_DIR / 'ESSENTIAL_STORY.md').relative_to(ROOT).as_posix() }")
+    return "\n".join(response_lines)
 
 @mcp.tool()
-def memoid_edit_wiki(page_path: str, content: str) -> str:
+def memoid_edit_wiki(
+    page_path: str,
+    content: Optional[str] = None,
+    summary: Optional[str] = None,
+    title: Optional[str] = None,
+    source_note_paths: Optional[List[str]] = None,
+    related_page_paths: Optional[List[str]] = None,
+    section_updates: Optional[Dict[str, str]] = None,
+    append_mode: str = "append",
+) -> str:
     """
-    Creates or updates a wiki page in memory/wiki/.
-    page_path should be relative to memory/wiki/ (e.g., 'concepts/mcp.md').
+    Creates or updates a canonical wiki page while preserving schema, sources, and index linkage.
     """
-    target_path = WIKI_DIR / page_path
-    if not target_path.suffix == ".md":
-        target_path = target_path.with_suffix(".md")
-        
+    normalized_page = _normalize_md_path(page_path)
+    target_path = WIKI_DIR / normalized_page
     target_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    action = "Updated" if target_path.exists() else "Created"
-    target_path.write_text(content, encoding="utf-8")
-    
-    # Log the edit
+
+    page_type = _guess_page_type(normalized_page)
+    expected_sections = _section_template(page_type)
+    existing_title = ""
+    if target_path.exists():
+        existing_title, sections, order = _parse_markdown_sections(target_path.read_text(encoding="utf-8"))
+    else:
+        sections, order = {}, []
+    _ensure_named_sections(sections, order, expected_sections)
+
+    resolved_title = title or existing_title or Path(normalized_page).stem.replace("-", " ").title()
+    if summary:
+        sections["## Summary"] = _merge_block(sections.get("## Summary", ""), summary, mode="replace")
+
+    body_target = {
+        "entities": "## Current",
+        "concepts": "## Key Ideas",
+        "domains": "## Current",
+        "comparisons": "## Criteria",
+        "syntheses": "## Key Ideas",
+    }.get(page_type, order[0] if order else "## Summary")
+
+    if content:
+        sections[body_target] = _merge_block(sections.get(body_target, ""), content, mode=append_mode)
+
+    for heading, body in (section_updates or {}).items():
+        normalized_heading = heading if heading.startswith("## ") else f"## {heading}"
+        if normalized_heading not in sections:
+            sections[normalized_heading] = ""
+            order.append(normalized_heading)
+        sections[normalized_heading] = _merge_block(sections.get(normalized_heading, ""), body, mode=append_mode)
+
+    related_targets = [WIKI_DIR / _normalize_md_path(path) for path in (related_page_paths or [])]
+    if related_targets:
+        if "## Relationships" not in sections:
+            sections["## Relationships"] = ""
+            order.append("## Relationships")
+        sections["## Relationships"] = _merge_list_block(
+            sections.get("## Relationships", ""),
+            _link_lines(target_path.parent, related_targets),
+        )
+
+    resolved_source_targets: List[Path] = []
+    for path in source_note_paths or []:
+        normalized_source = Path(path)
+        if not normalized_source.suffix:
+            normalized_source = normalized_source.with_suffix(".md")
+        resolved = normalized_source if normalized_source.is_absolute() else (ROOT / normalized_source)
+        if not resolved.exists():
+            candidate = EVIDENCE_DIR / "source-notes" / normalized_source.name
+            resolved = candidate
+        resolved_source_targets.append(resolved)
+    if resolved_source_targets:
+        sections["## Sources"] = _merge_list_block(
+            sections.get("## Sources", ""),
+            _link_lines(target_path.parent, resolved_source_targets),
+        )
+
+    rendered = _render_markdown_page(resolved_title, sections, order)
+    previous_content = target_path.read_text(encoding="utf-8") if target_path.exists() else None
+    target_path.write_text(rendered, encoding="utf-8")
+
+    summary_for_index = sections.get("## Summary", "").splitlines()[0] if sections.get("## Summary", "").strip() else resolved_title
+    index_changed = _ensure_index_entry(normalized_page, resolved_title, summary_for_index)
+
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_file = WIKI_DIR / "LOG.md"
-    with open(log_file, "a", encoding="utf-8") as f:
-        f.write(f"\n- {timestamp}: {action} wiki page '{page_path}' via MCP.")
-        
-    return f"{action} wiki page at {target_path.relative_to(ROOT)}"
+    action = "Updated" if previous_content is not None else "Created"
+    _append_log_entry(
+        f"- {timestamp}: {action} wiki page `{target_path.relative_to(ROOT).as_posix()}` via MCP."
+        f"{' Index updated.' if index_changed else ''}"
+    )
+
+    lint_findings = _lint_modified_pages([target_path])
+    response = [
+        f"{action} wiki page at {target_path.relative_to(ROOT).as_posix()}",
+        f"Index Updated: {'yes' if index_changed else 'no'}",
+        _scoped_lint_report([target_path]),
+    ]
+    return "\n".join(response)
+
+
+@mcp.tool()
+def memoid_audit(scope: str = "recent", page_paths: Optional[List[str]] = None, limit: int = 5) -> str:
+    """
+    Runs an explicit maintenance audit and writes findings to memory/evidence/audits/.
+    Scope:
+    - recent: pages touched in recent LOG.md entries
+    - pages: explicit wiki page paths
+    - full: recent pages plus orphan wiki-page detection
+    """
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+
+    if scope == "pages":
+        targets = [WIKI_DIR / _normalize_md_path(path) for path in (page_paths or [])]
+    elif scope == "full":
+        targets = _recent_log_paths(limit)
+    else:
+        targets = _recent_log_paths(limit)
+
+    targets = [path for path in targets if path.exists()]
+    findings = _lint_modified_pages(targets)
+    follow_ups: List[str] = []
+
+    if scope == "full":
+        orphan_pages = _orphan_wiki_pages()
+        if orphan_pages:
+            findings.extend(f"- Orphan page not linked from index: `{path.relative_to(ROOT).as_posix()}`" for path in orphan_pages)
+            follow_ups.extend(f"Add `{path.relative_to(ROOT).as_posix()}` to INDEX.md or link it from a canonical page." for path in orphan_pages)
+
+    if not findings:
+        follow_ups.append("No immediate maintenance action required.")
+    elif not follow_ups:
+        follow_ups.append("Resolve the listed findings or rerun audit after related page updates.")
+
+    audit_file = EVIDENCE_DIR / "audits" / f"{date_str}-{scope}-audit.md"
+    audit_file.parent.mkdir(parents=True, exist_ok=True)
+    audit_file.write_text(_build_audit_note(scope, targets, findings, follow_ups, audit_file), encoding="utf-8")
+
+    _append_log_entry(
+        f"- {timestamp} [audit]: Ran `{scope}` audit via MCP. "
+        f"Report: `{audit_file.relative_to(ROOT).as_posix()}`. Findings: {len(findings)}."
+    )
+
+    response = [
+        f"Audit report written to {audit_file.relative_to(ROOT).as_posix()}",
+        f"Scope: {scope}",
+        f"Targets: {len(targets)}",
+        f"Findings: {len(findings)}",
+    ]
+    if findings:
+        response.append("Audit Findings:")
+        response.extend(findings)
+    return "\n".join(response)
 
 if __name__ == "__main__":
     mcp.run()
