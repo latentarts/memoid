@@ -224,20 +224,20 @@ function Configure-DetectedMcpClients {
             $configPath = Get-AgentConfigPath -Agent $agent
             $status = Get-AgentConfigStatus -Agent $agent -ConfigPath $configPath
             switch ($status) {
-                "present" { Write-Info " - $agent: installed, config ready, Memoid MCP already configured ($configPath)" }
+                "present" { Write-Info " - ${agent}: installed, config ready, Memoid MCP already configured ($configPath)" }
                 "absent" {
-                    Write-Info " - $agent: installed, config found or will be created, Memoid MCP missing ($configPath)"
+                    Write-Info " - ${agent}: installed, config found or will be created, Memoid MCP missing ($configPath)"
                     $selectable.Add($agent) | Out-Null
                 }
                 "missing" {
-                    Write-Info " - $agent: installed, config not found yet, will create if selected ($configPath)"
+                    Write-Info " - ${agent}: installed, config not found yet, will create if selected ($configPath)"
                     $selectable.Add($agent) | Out-Null
                 }
-                "invalid" { Write-Warn " - $agent: installed, but config is invalid and was skipped ($configPath)" }
-                default { Write-Warn " - $agent: installed, but status could not be determined ($configPath)" }
+                "invalid" { Write-Warn " - ${agent}: installed, but config is invalid and was skipped ($configPath)" }
+                default { Write-Warn " - ${agent}: installed, but status could not be determined ($configPath)" }
             }
         } else {
-            Write-Info " - $agent: not installed"
+            Write-Info " - ${agent}: not installed"
         }
     }
 
@@ -324,8 +324,19 @@ Write-Info "Checking for scripts directory in PATH..."
 $ScriptsDir = Join-Path $HOME "Documents\WindowsPowerShell\Scripts"
 if (-not (Test-Path $ScriptsDir)) { New-Item -ItemType Directory -Path $ScriptsDir -Force }
 
+$UserPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
+if (-not $UserPath -or $UserPath -notmatch [regex]::Escape($ScriptsDir)) {
+    Write-Info "Adding $ScriptsDir to User PATH..."
+    [System.Environment]::SetEnvironmentVariable("Path", "$UserPath;$ScriptsDir", "User")
+    $env:Path = "$env:Path;$ScriptsDir"
+}
+
 $DestFile = Join-Path $ScriptsDir "memoid.ps1"
-Copy-Item "scripts\memoid.ps1" $DestFile -Force
+$ProxyScript = @"
+& "$InstallPath\scripts\memoid.ps1" @args
+exit `$LASTEXITCODE
+"@
+Set-Content -Path $DestFile -Value $ProxyScript -Encoding UTF8
 Write-Success "CLI 'memoid' installed to $DestFile"
 
 Write-Info "Running CLI smoke test..."
