@@ -1,3 +1,5 @@
+> **Note:** This file has been superseded by `protocols/CONVENTIONS.md`, which consolidates schema conventions and fact lifecycle rules into a single canonical reference.
+
 # Schema
 
 ## Purpose

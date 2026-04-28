@@ -5,7 +5,11 @@
 
 Memoid is a markdown-first memory system for AI agents that merges [Karpathy's LLM Wiki approach](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) and [MemPalace](https://github.com/MemPalace/mempalace).
 
-It is designed to be your **"Global Second Brain"**—accessible by any AI agent (Claude, Gemini, Codex, Cursor, OpenCode) regardless of which project you are currently working on.
+It is designed to be your **"Global Second Brain"** — accessible by any AI agent (Claude, Gemini, Codex, Cursor, OpenCode) regardless of which project you are currently working on.
+
+Works in two modes:
+- **Standalone** — a dedicated repo that acts as a persistent second brain across projects
+- **Embedded** — a `memory/` folder dropped into an existing project repo
 
 ---
 
@@ -15,12 +19,13 @@ Memoid was built to solve the "Agentic Amnesia" problem. While most RAG (Retriev
 
 ### The Hybrid Advantage
 
-By combining **Karpathy’s LLM Wiki** and **MemPalace**, Memoid offers:
+By combining **Karpathy's LLM Wiki** and **MemPalace**, Memoid offers:
 
 - **Compounding Synthesis**: Knowledge isn't just "found"; it is compiled. The more you work, the more the Wiki improves.
-- **Operational Discipline**: Explicit protocols (Wake-Up, Ingest, Filing) prevent the "pile of summaries" problem found in unmanaged wikis.
+- **Operational Discipline**: Explicit protocols prevent the "pile of summaries" problem found in unmanaged wikis.
 - **Evidence-Backed**: Every wiki claim is linked to an immutable raw source or a session record, ensuring you can always audit *why* the AI remembers something.
 - **Zero Lock-in**: Your memory is just Markdown and Git. You can browse it in Obsidian, edit it in VS Code, or version control it like code.
+- **Bounded Performance**: Retrieval returns relevant excerpts, not full file dumps — fast even as your wiki grows.
 
 ### Feature Comparison
 
@@ -33,22 +38,11 @@ By combining **Karpathy’s LLM Wiki** and **MemPalace**, Memoid offers:
 | **Evidence & Session Records**   | ❌             | ✅         | ✅               |
 | **Specialist Agent Continuity**  | ❌             | ✅         | ✅               |
 | **Bounded Wake-Up Context**      | ❌             | ✅         | ✅               |
+| **Structured Lint Checks**       | ⚠️            | ❌         | ✅               |
 | **Explicit Operating Protocols** | ⚠️            | ✅         | ✅               |
 | **MCP / Global Tool Access**     | ❌             | ❌         | ✅               |
+| **Bounded Excerpt Retrieval**    | ❌             | ❌         | ✅               |
 | **Low Tooling Complexity**       | ✅             | ❌         | ✅               |
-
-### Feature Glossary
-
-- **Markdown-First**: Knowledge is stored in human-readable `.md` files, making it easy to browse in Obsidian, VS Code, or a terminal.
-- **Git-Native**: Uses standard Git for version control. **Note**: most generated `memory/` content is ignored by the core Memoid engine repo by default, so you can keep the engine code and your private knowledge lifecycle separate.
-- **Immutable Raw Sources**: Original documents (articles, transcripts) are never edited, serving as the permanent "ground truth" to back up wiki claims.
-- **Maintained Wiki Synthesis**: Instead of just searching documents, the agent compiles and improves high-level "Entity" and "Concept" pages over time.
-- **Evidence & Session Records**: A durable trail of session logs and source notes that explains exactly *how* and *why* a piece of knowledge was added.
-- **Specialist Agent Continuity**: Persistent diaries for specialized agent roles (Researcher, Reviewer), allowing them to learn and improve their habits over time.
-- **Bounded Wake-Up Context**: A "minimalist" startup protocol that prevents the agent from being overwhelmed by too much data at the start of a session.
-- **Explicit Operating Protocols**: Clear Markdown instructions (`protocols/`) that define the agent's behavior, ensuring consistent ingestion and retrieval.
-- **MCP / Global Tool Access**: Integration via Model Context Protocol, allowing any agent to access your brain from a different project's directory.
-- **Low Tooling Complexity**: No specialized databases or vector stores required; if you can edit a text file, you can maintain Memoid.
 
 ### ⚠️ Limitations
 
@@ -62,9 +56,49 @@ By combining **Karpathy’s LLM Wiki** and **MemPalace**, Memoid offers:
 
 Memoid is 100% transparent. No databases, just interlinked Markdown files.
 
-- **`memory/`**: The Data. Your compounding knowledge base (Raw sources, Wiki, Evidence).
-- **`protocols/`**: The Rules. Markdown instructions that tell the AI how to Ingest, Retrieve, and File.
-- **`scripts/`**: The Tools. A lean CLI for maintenance and an MCP server for global connectivity.
+```
+memoid/
+├── AGENTS.md               # Master orchestrator instructions
+├── CLAUDE.md / GEMINI.md   # Agent-specific guidance
+├── SPEC.md                 # Architecture design rationale
+├── memory/
+│   ├── raw/                # Immutable source material (articles, transcripts, assets, inbox)
+│   ├── wiki/
+│   │   ├── IDENTITY.md     # What this system is, its values, agent behavior
+│   │   ├── ESSENTIAL_STORY.md  # Current state, active threads, open questions
+│   │   ├── INDEX.md        # Master index — links to every wiki page
+│   │   ├── LOG.md          # Append-only activity log
+│   │   ├── entities/       # People, projects, systems, tools
+│   │   ├── concepts/       # Patterns, approaches, ideas
+│   │   └── domains/        # Subject-area overviews
+│   ├── evidence/
+│   │   ├── sessions/       # Work records — one file per session
+│   │   ├── decisions/      # Decision rationale — why, not just what
+│   │   ├── source-notes/   # Source provenance and metadata
+│   │   └── audits/         # Lint and consistency check reports
+│   └── agents/             # Specialist agent diaries for meta-learning
+├── protocols/              # The rules — Markdown programs the agent follows
+│   ├── WAKE_UP.md          # Bounded context reconstruction at session start
+│   ├── CONVENTIONS.md      # Page structure, naming, fact lifecycle (canonical reference)
+│   ├── INGEST.md           # Raw source → evidence → wiki pipeline
+│   ├── INGEST_CODE.md      # Codebase → evidence → wiki pipeline
+│   ├── RETRIEVAL.md        # Answering questions from maintained knowledge
+│   ├── SEARCH.md           # Structured search with explicit output format
+│   ├── FILING.md           # Saving session work into durable memory
+│   ├── COMPACTION.md       # Handoff before context loss
+│   ├── LINT.md             # Structured consistency checks with pass/fail output
+│   └── INIT.md             # First-use repository preparation
+└── scripts/                # Lean CLI and MCP server
+    ├── memoid              # CLI dispatcher
+    ├── mcp_server.py       # MCP server for cross-project access
+    └── post_init_check.py  # Runtime directory bootstrap
+```
+
+**Wiki** is the maintained synthesis — the agent creates and revises these freely, always keeping them current.
+
+**Evidence** is the append-only record — session notes and decision rationale that back up wiki claims. Never edited after creation.
+
+**Protocols** define exactly how to act in each situation. They are read before the agent acts and produce reproducible results.
 
 ---
 
@@ -86,27 +120,51 @@ curl -sSL https://raw.githubusercontent.com/latentarts/memoid/main/scripts/insta
 powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/latentarts/memoid/main/scripts/install.ps1 | iex"
 ```
 
-*The installer will ask for your preferred path, install `uv` if missing, run `memoid init` for you, detect supported AI agents, and offer to update their MCP configs automatically. Once installed, you can still use the [MCP Setup](#-mcp-setup) section for manual configuration or verification.*
+*The installer will ask for your preferred path, install `uv` if missing, run `memoid init` for you, detect supported AI agents, and offer to update their MCP configs automatically.*
 
 ---
 
 ### 2. Manual Setup (Alternative)
 
-If you prefer to do it yourself, `memoid init` remains a required manual step after cloning:
+**Standalone:**
 
-1. **Clone**: `git clone https://github.com/latentarts/memoid.git ~/memoid`
-2. **Initialize**: `cd ~/memoid && ./scripts/memoid init`
-3. **Update**: Keep your brain up to date with `./scripts/memoid update`
-4. **Direct Access (Local)**: To work **inside** your knowledge base repo (e.g., to reorganize the wiki), run your agent via the Memoid CLI, for example: `memoid gemini`. This opens the agent in the Memoid repo root.
-5. **Global Access (Cross-Project)**: Set up the [MCP Server](#-mcp-setup) in your agent's config.
+```bash
+git clone https://github.com/latentarts/memoid.git ~/memoid
+cd ~/memoid
+./scripts/memoid init
+```
+
+**Embedded (inside an existing project):**
+
+```bash
+cp -r ~/memoid/memory ~/memoid/protocols ~/memoid/scripts your-project/
+```
+
+Then add the following block to your project's agent config (`CLAUDE.md`, `GEMINI.md`, etc.):
+
+```markdown
+## Memory System
+
+At the start of every session, read:
+1. `memory/wiki/IDENTITY.md` — what this system is and its values
+2. `memory/wiki/ESSENTIAL_STORY.md` — current state, active threads, open questions
+
+Navigate `memory/wiki/INDEX.md` as needed. Do NOT preload the full wiki.
+
+Protocols live in `protocols/`. Read the relevant one before acting:
+- `protocols/CONVENTIONS.md` — page structure, naming, fact lifecycle
+- `protocols/INGEST.md` — adding a new source, doc, or codebase
+- `protocols/RETRIEVAL.md` — answering a question from maintained knowledge
+- `protocols/SEARCH.md` — finding information across memory files
+- `protocols/LINT.md` — verifying memory integrity
+- `protocols/FILING.md` — saving session work to durable memory
+```
 
 ---
 
 ## ▶️ Accessing Memoid
 
-After installation, the main local entrypoint is the `memoid` CLI. Running `memoid <agent>` opens your agent directly in the Memoid repo root, which is the preferred way to do in-repo maintenance and protocol-driven work.
-
-### Linux / macOS
+After installation, the main local entrypoint is the `memoid` CLI. Running `memoid <agent>` opens your agent directly in the Memoid repo root.
 
 ```bash
 memoid claude
@@ -114,124 +172,29 @@ memoid gemini
 memoid codex
 ```
 
-### Windows (PowerShell)
-
-```powershell
-memoid claude
-memoid gemini
-memoid codex
-```
-
-If the `memoid` command is not found, make sure the install location for the launcher was added to your `PATH`, then open a new shell and try again.
+If the `memoid` command is not found, make sure the install location was added to your `PATH`, then open a new shell and try again.
 
 ---
 
-## 💡 Usage Examples
+## 💡 Operations at a Glance
 
-### Two Operating Modes
+All operations are conversational — no commands to run. Ask your agent and it follows the matching protocol.
 
-Memoid has two distinct modes. The right one depends on your current working directory.
-
-- **Inside the Memoid repo (`~/memoid`)**: Use native tools and protocols. The agent should read `AGENTS.md`, follow `WAKE_UP.md`, and work directly with local files.
-- **Outside the Memoid repo (another project)**: Use the Memoid MCP as a remote interface to your global memory. This is for recall, bounded orientation, and deliberate filing back into Memoid.
-
-They can coexist in the same agent configuration, but they do **not** serve the same purpose.
-
-- **Native in-repo mode** is the full-fidelity workflow: wake-up, protocol execution, repo-wide maintenance, richer judgment, and full lint/audit behavior.
-- **MCP mode** is the remote access workflow: bounded wake-up, disciplined retrieval, scoped writes, and explicit audits when requested.
-
-### Inside the Repo: Native Protocol Workflow
-
-*Scenario: You are in `~/memoid` and want to maintain or reorganize your brain.*
-
-**Prompt:** "Wake up and tell me what state this brain is in."
-
-> **AI Action:** Checks initialization, reads `memory/wiki/IDENTITY.md`, `memory/wiki/ESSENTIAL_STORY.md`, and `AGENTS.md`, then follows `protocols/WAKE_UP.md`.
-
-**Prompt:** "Find everything relevant to retrieval discipline and update the canonical page."
-
-> **AI Action:** Uses native repo tools (`rg`, file reads, direct edits) and follows `protocols/RETRIEVAL.md` and `protocols/FILING.md` instead of the MCP.
-
-**Prompt:** "Audit the wiki for contradictions and missing evidence links."
-
-> **AI Action:** Runs the native maintenance path from `protocols/LINT.md`, which is the preferred path for full maintenance work.
-
-**Prompt:** "Ingest this new source and update the right pages."
-
-> **AI Action:** Follows the native ingest protocol in `protocols/INGEST.md` or `protocols/INGEST_CODE.md`, then verifies and files the results locally.
-
-### Outside the Repo: MCP Recall and Filing
-
-*Scenario: You are in `~/projects/my-app` and want to consult or update your global Memoid memory without leaving the current project.*
-
-**Prompt:** "Search my Memoid for that OAuth2 pattern we used last month."
-
-> **AI Action:** Calls `memoid_recall` to follow the retrieval ladder through `INDEX.md`, relevant wiki pages, linked evidence, and raw sources only if explicitly needed.
-
-**Prompt:** "Wake up my Memoid context before we plan this migration."
-
-> **AI Action:** Calls `memoid_wake_up` to load bounded startup context (`IDENTITY.md`, `ESSENTIAL_STORY.md`, and optionally `INDEX.md`), then uses `memoid_recall` if deeper retrieval is needed.
-
-**Prompt:** "Did I ever document a retry pattern for API clients?"
-
-> **AI Action:** Uses `memoid_recall` as disposable working context for the current task. Nothing is saved back to Memoid unless you explicitly ask for it.
-
-**Prompt:** "Document this bug fix in my Memoid."
-
-> **AI Action:** Calls `memoid_ingest` to save the source, create a source note, update a wiki page, refresh the index/log, and run scoped lint on the affected artifacts.
-
-**Prompt:** "Update the Memoid concept page with what we just learned."
-
-> **AI Action:** Calls `memoid_edit_wiki` to update the canonical wiki page while preserving structure, source links, index linkage, and scoped lint checks.
-
-**Prompt:** "Save a durable note from this session in Memoid."
-
-> **AI Action:** Calls `memoid_log` to file a structured session record under `memory/evidence/sessions/` and append a concise `LOG.md` entry.
-
-**Prompt:** "Run a Memoid audit on the pages we touched."
-
-> **AI Action:** Calls `memoid_audit` to create an explicit audit note under `memory/evidence/audits/`. This is optional maintenance from outside the repo, not a replacement for native full-repo maintenance.
-
-### Rule of Thumb
-
-- If you are **inside `~/memoid`**, prefer native tools and protocols.
-- If you are **outside `~/memoid`**, prefer the MCP for lookup and deliberate filing.
-- Use **`memoid_wake_up`** for broader outside-repo orientation.
-- Use **`memoid_recall`** for narrow outside-repo lookup.
-- Use **native in-repo maintenance** when you want the strongest audit, restructuring, or protocol-heavy work.
-
-### Current MCP Tool Surface
-
-The current Memoid MCP server exposes these tools:
-
-- **`memoid_wake_up`**: Bounded startup context for outside-repo use.
-- **`memoid_recall`**: Retrieval-ladder search with trust signals.
-- **`memoid_ingest`**: Raw -> evidence -> wiki -> index -> log pipeline with scoped lint.
-- **`memoid_edit_wiki`**: Structured canonical-page updates with source/index preservation.
-- **`memoid_log`**: Session filing into `memory/evidence/sessions/` plus `LOG.md`.
-- **`memoid_audit`**: Explicit outside-repo maintenance that writes to `memory/evidence/audits/`.
-
----
-
-## 🛠️ CLI Commands
-
-| Command          | Description                                                                                                             |
-|:---------------- |:----------------------------------------------------------------------------------------------------------------------- |
-| `memoid init`    | Prepares the directory structure. Safe to run multiple times; it will not delete existing data.                         |
-| `memoid update`  | Updates the engine and protocols. **Never** overwrites your knowledge base (`memory/` folder).                          |
-| `memoid mcp`     | Launches the MCP server for global connectivity.                                                                        |
-| `memoid <agent>` | Launches an agent (e.g., `gemini`, `claude`, `codex`) in the Memoid repo root. Shortcut for opening the agent directly on `~/memoid`. |
-| `memoid version` | Displays the current version.                                                                                           |
+| What you want | What to say | Protocol |
+|---|---|---|
+| Add a URL, doc, or codebase | "ingest [source]" | `protocols/INGEST.md` |
+| Answer a question from memory | just ask | `protocols/RETRIEVAL.md` |
+| Find something | "search for X" | `protocols/SEARCH.md` |
+| Check everything is consistent | "run a lint check" | `protocols/LINT.md` |
+| Close out a session | "file this session" | `protocols/FILING.md` |
 
 ---
 
 ## 🔄 Core Workflows
 
-Memoid is governed by simple, repeatable workflows. Here is how the AI interacts with your files.
-
 ### 1. Wake-Up (Context Reconstruction)
 
-When you start a session, the AI doesn't read the whole wiki. It follows a "minimalist" sequence to understand who it is and what you are working on.
+The agent doesn't read the whole wiki at startup. It follows a minimalist sequence:
 
 ```mermaid
 graph LR
@@ -241,30 +204,32 @@ graph LR
     D --> E[Reconstructed Context]
 ```
 
-1. **`WAKE_UP.md`**: The AI reads its "bootstrap" instructions.
-2. **`IDENTITY.md`**: It learns its role and your personal preferences.
-3. **`ESSENTIAL_STORY.md`**: It gets up to speed on active projects and recent changes.
+1. **`WAKE_UP.md`**: Bootstrap instructions.
+2. **`IDENTITY.md`**: Role and preferences.
+3. **`ESSENTIAL_STORY.md`**: Active projects and recent changes.
 
 ### 2. Search (The Retrieval Ladder)
 
-To provide accurate, grounded answers, the AI climbs a "ladder" from high-level summaries down to the raw ground truth.
+To provide accurate, grounded answers, the agent climbs a "ladder" from summaries down to ground truth.
 
 ```mermaid
 graph TD
     Q[Question] --> L1[1. memory/wiki/INDEX.md]
     L1 --> L2[2. Relevant Wiki Pages]
-    L2 --> L3[3. Evidence Source Notes]
+    L2 --> L3[3. Evidence Records]
     L3 --> L4[4. Raw Source Files]
 ```
 
 1. **Index**: Finds which pages might have the answer.
 2. **Wiki**: Reads the compiled synthesis for a quick, high-quality answer.
-3. **Evidence**: Checks the source notes to verify the "how" and "when."
+3. **Evidence**: Checks source notes and session records for provenance.
 4. **Raw**: Consults the original immutable document if absolute precision is required.
+
+MCP retrieval returns **bounded excerpts** (300-char windows around matching terms) instead of full file dumps — fast even as your wiki grows.
 
 ### 3. Ingest (The Knowledge Pipeline)
 
-When you add new information, the AI follows a strict pipeline to ensure the knowledge is synthesized and logged, not just dumped.
+New information follows a strict pipeline to ensure knowledge is synthesized and logged, not just dumped.
 
 ```mermaid
 sequenceDiagram
@@ -275,30 +240,37 @@ sequenceDiagram
 
     Note over R: 1. Store original file
     R->>E: 2. Extract metadata & summary
-    E->>W: 3. Update or create concept pages
+    E->>W: 3. Update or create wiki pages
     W->>L: 4. Record the change
 ```
 
 1. **Raw**: The original file is stored permanently in `memory/raw/`.
-2. **Evidence**: A "Source Note" is created in `memory/evidence/source-notes/` to preserve provenance.
-3. **Wiki**: The AI updates one or more canonical pages in `memory/wiki/` with the new insights.
-4. **Log**: The action is recorded in `memory/wiki/LOG.md` for a clear audit trail.
+2. **Evidence**: A source note captures provenance and metadata.
+3. **Wiki**: The agent updates one or more canonical pages with the new insights.
+4. **Log**: The action is recorded in `memory/wiki/LOG.md`.
 
-### 4. Audit (Consistency & Health)
+### 4. Lint (Consistency & Health)
 
-To prevent drift and contradictions, the system undergoes regular audits to maintain the integrity of the second brain.
+Structured, executable checks prevent drift and contradictions.
 
 ```mermaid
 graph LR
-    A['memory/wiki/LOG.md'] --> B[Sample Active Pages]
-    B --> C['memory/evidence/audits/']
-    C --> D[System Health Report]
+    A[memory/wiki/INDEX.md] --> B[Orphan Detection]
+    B --> C[Broken Link Check]
+    C --> D[Format Validation]
+    D --> E[OK / ERR / WRN Report]
 ```
 
-1. **Review**: Sample recent logs and active pages to identify drift or missing structure.
-2. **Cross-Check**: Verify that wiki claims still align with their evidence notes.
-3. **Log Findings**: Record maintenance tasks and inconsistencies in `memory/evidence/audits/`.
-4. **Prune**: Move stale information to `History` sections to keep current pages focused.
+Eight concrete checks produce a structured pass/fail report:
+- Orphan pages (absent from INDEX.md)
+- Broken internal links
+- LOG.md format violations
+- Placeholder detection in IDENTITY.md / ESSENTIAL_STORY.md
+- Unlinked evidence files
+- Entity page structure (`Current`, `History`, `Sources`)
+- Evidence page backlinks (`Affected Pages`)
+
+Results use `OK`, `ERR`, `WRN`, `SKIP` per check. All `ERR` items must be resolved before filing.
 
 ---
 
@@ -306,24 +278,150 @@ graph LR
 
 Memoid doesn't use complex code for logic; it uses Markdown instructions in the `protocols/` folder:
 
-- **`INGEST.md`**: How to turn a source into a Wiki page.
-- **`RETRIEVAL.md`**: How to find the most accurate answer.
-- **`FILING.md`**: What deserves to be saved permanently.
-- **`LINT.md`**: How to perform consistency audits.
-- **`WAKE_UP.md`**: How the agent reconstructs its context at the start of a session.
+| Protocol | Purpose |
+|---|---|
+| **`CONVENTIONS.md`** | Page structure, naming conventions, and fact lifecycle rules (canonical reference) |
+| **`INGEST.md`** / **`INGEST_CODE.md`** | Turn a source or codebase into durable wiki knowledge |
+| **`RETRIEVAL.md`** | Answer questions using the retrieval ladder |
+| **`SEARCH.md`** | Structured search with explicit output format for reproducible results |
+| **`FILING.md`** | Save session work to durable memory, including pre-context-limit compaction |
+| **`LINT.md`** | Structured consistency audits with eight pass/fail checks |
+| **`WAKE_UP.md`** | Reconstruct agent context from minimal startup files |
+| **`COMPACTION.md`** | Handoff generation before context is lost |
+
+---
+
+## 📝 File Editing Rules
+
+| File | Rule |
+|---|---|
+| Wiki pages (`memory/wiki/`) | Edit freely — always update `History` when facts change |
+| Evidence files (`memory/evidence/`) | Append-only — add sections, never revise past entries |
+| `LOG.md` | Append-only — never edit past entries |
+| `ESSENTIAL_STORY.md` | Replace freely — reflects current state, not history |
+| `INDEX.md` | Every wiki page must have a link here — unlinked pages are orphans |
+| `IDENTITY.md` | Update only when core purpose or values change |
+
+---
+
+## ✍️ Adding Data Manually
+
+You can write or edit memory files directly without going through the agent.
+
+### Add a wiki page
+
+Pick the right type and location:
+
+```
+Entity   → memory/wiki/entities/<name>.md    (a person, project, system, tool)
+Concept  → memory/wiki/concepts/<name>.md    (a pattern, approach, idea)
+Domain   → memory/wiki/domains/<name>.md     (a subject-area overview)
+```
+
+Use kebab-case filenames. Templates are in `protocols/CONVENTIONS.md`. After creating a page, add a link to `memory/wiki/INDEX.md`.
+
+### Record a decision
+
+Create `memory/evidence/decisions/YYYY-MM-DD-<slug>.md`:
+
+```markdown
+# Decision: <title>
+
+- **Decision:** what was decided
+- **Rationale:** why
+- **Alternatives considered:** what else was on the table
+- **Expected consequences:** what this changes
+```
+
+Then link to it from the relevant wiki page under `## Sources`.
+
+### Update a fact
+
+Never silently overwrite. In the wiki page:
+
+1. Move the old row to the `## History` table with today's date and the reason
+2. Update the `## Current` table with the new value
+
+---
+
+## 💡 Usage Examples
+
+### Two Operating Modes
+
+Memoid has two distinct modes:
+
+- **Inside the Memoid repo (`~/memoid`)**: Native tools and protocols. The agent reads `AGENTS.md`, follows `WAKE_UP.md`, and works directly with local files. This is the full-fidelity workflow for repo-wide maintenance, linting, and protocol-heavy work.
+- **Outside the Memoid repo (another project)**: MCP server for remote recall, bounded orientation, and deliberate filing. This is the remote access workflow — good for lookup and scoped writes from any project directory.
+
+### Inside the Repo: Native Protocol Workflow
+
+**Prompt:** "Wake up and tell me what state this brain is in."
+
+> **AI Action:** Checks initialization, reads `memory/wiki/IDENTITY.md`, `memory/wiki/ESSENTIAL_STORY.md`, and `AGENTS.md`, then follows `protocols/WAKE_UP.md`.
+
+**Prompt:** "Find everything relevant to retrieval discipline and update the canonical page."
+
+> **AI Action:** Uses native repo tools (`rg`, file reads, direct edits) and follows `protocols/RETRIEVAL.md` and `protocols/FILING.md`.
+
+**Prompt:** "Run a lint check."
+
+> **AI Action:** Executes all eight structured checks from `protocols/LINT.md` and reports `OK`/`ERR`/`WRN` per check.
+
+**Prompt:** "Search for anything about OAuth2 patterns."
+
+> **AI Action:** Follows the `SEARCH.md` protocol: index scan → wiki scan → evidence scan, with file/section/line output.
+
+### Outside the Repo: MCP Recall and Filing
+
+**Prompt:** "Search my Memoid for that OAuth2 pattern we used last month."
+
+> **AI Action:** Calls `memoid_recall` — climbs the retrieval ladder through `INDEX.md`, relevant wiki pages, linked evidence, returning bounded excerpts.
+
+**Prompt:** "Wake up my Memoid context before we plan this migration."
+
+> **AI Action:** Calls `memoid_wake_up` for bounded startup context (`IDENTITY.md`, `ESSENTIAL_STORY.md`, optional `INDEX.md`).
+
+**Prompt:** "Document this bug fix in my Memoid."
+
+> **AI Action:** Calls `memoid_ingest` to save the source, create a source note, update a wiki page, refresh the index/log, and run scoped lint.
+
+**Prompt:** "Run a Memoid audit on the pages we touched."
+
+> **AI Action:** Calls `memoid_audit` to create an explicit audit note under `memory/evidence/audits/`.
+
+### Current MCP Tool Surface
+
+| Tool | Purpose |
+|---|---|
+| **`memoid_wake_up`** | Bounded startup context for outside-repo use |
+| **`memoid_recall`** | Retrieval-ladder search with bounded excerpts and trust signals |
+| **`memoid_ingest`** | Raw → evidence → wiki → index → log pipeline with scoped lint |
+| **`memoid_edit_wiki`** | Structured canonical-page updates with source/index preservation |
+| **`memoid_log`** | Session filing into `memory/evidence/sessions/` plus `LOG.md` |
+| **`memoid_audit`** | Explicit outside-repo maintenance that writes to `memory/evidence/audits/` |
+
+---
+
+## 🛠️ CLI Commands
+
+| Command          | Description                                                                                                             |
+|:---------------- |:----------------------------------------------------------------------------------------------------------------------- |
+| `memoid init`    | Prepares the directory structure. Safe to run multiple times; will not delete existing data.                         |
+| `memoid update`  | Updates the engine and protocols. **Never** overwrites your knowledge base (`memory/` folder).                          |
+| `memoid mcp`     | Launches the MCP server for global connectivity.                                                                        |
+| `memoid <agent>` | Launches an agent (e.g., `gemini`, `claude`, `codex`) in the Memoid repo root. |
+| `memoid version` | Displays the current version.                                                                                           |
 
 ---
 
 ## 🔌 MCP Setup
 
-Memoid uses the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) to provide your global brain to any AI agent. To enable this, you must add Memoid as a server in your agent's configuration.
-
-Once connected, the MCP server gives outside-repo agents bounded wake-up, disciplined retrieval, deliberate filing, and explicit audits without requiring them to operate directly inside `~/memoid`.
+Memoid uses the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) to provide your global brain to any AI agent. Once connected, the MCP server gives outside-repo agents bounded wake-up, disciplined retrieval with bounded excerpts, deliberate filing, and explicit audits — without requiring them to operate inside `~/memoid`.
 
 ### Configuration for AI Agents
 
 #### **Claude Desktop**
-Edit your `claude_desktop_config.json` (usually at `~/.config/Claude/claude_desktop_config.json` on Linux or `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+Edit `claude_desktop_config.json`:
 
 ```json
 {
@@ -337,7 +435,7 @@ Edit your `claude_desktop_config.json` (usually at `~/.config/Claude/claude_desk
 ```
 
 #### **OpenCode**
-Edit your `opencode.json` (usually at `~/.config/opencode/opencode.json`):
+Edit `opencode.json`:
 
 ```json
 {
@@ -352,7 +450,7 @@ Edit your `opencode.json` (usually at `~/.config/opencode/opencode.json`):
 ```
 
 #### **Gemini CLI**
-These CLIs typically use a `~/.gemini/settings.json` file. Ensure they are configured to point to the Memoid MCP server:
+Edit `~/.gemini/settings.json`:
 
 ```json
 {
@@ -366,7 +464,7 @@ These CLIs typically use a `~/.gemini/settings.json` file. Ensure they are confi
 ```
 
 #### **Codex**
-Add the following to your `codex.toml` configuration file:
+Add to `codex.toml`:
 
 ```toml
 [mcp_servers.memoid]
@@ -379,16 +477,14 @@ args = ["mcp"]
 ## 🔧 Troubleshooting
 
 ### Agent Command Not Found
-If you get an error like `Error: Agent command 'gemini' not found in PATH`, ensure that the agent CLI is installed globally on your system.
+If you get `Error: Agent command 'gemini' not found in PATH`, install the agent CLI globally:
 
-**For npm-based CLIs (Gemini, Codex, etc.):**
 ```bash
 sudo npm install -g @google/gemini-cli
 sudo npm install -g @openai/codex
 ```
 
-**For other CLIs:**
-Ensure the binary is in your `$PATH` (e.g., in `/usr/local/bin` or `~/.local/bin`). You can verify this by running `command -v <agent_name>` in your terminal.
+Verify with `command -v <agent_name>` in your terminal.
 
 ---
 

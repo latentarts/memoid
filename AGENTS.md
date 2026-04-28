@@ -59,10 +59,13 @@ Each specialized agent maintains a `DIARY.md`. This is for **meta-learning**, no
 | --- | --- |
 | `WAKE_UP.md` | Bounded context state reconstruction. |
 | `INGEST.md` | Raw → Evidence → Wiki pipeline. |
+| `INGEST_CODE.md` | Codebase → Evidence → Wiki pipeline. |
 | `RETRIEVAL.md` | Efficient, grounded answer discovery. |
+| `SEARCH.md` | Structured search with explicit output format. |
 | `FILING.md` | Saving session work into durable memory. |
 | `COMPACTION.md` | Handoff generation for the next session. |
-| `LINT.md` | System health and consistency check. |
+| `LINT.md` | System health and consistency check (structured checks). |
+| `CONVENTIONS.md` | Page structure, naming, fact lifecycle (canonical reference). |
 | `INIT.md` | Prepare the repo for first use. |
 
 *Note: Operational logic lives in the Protocols. When the current working directory is the Memoid repository, execute them with native local tools rather than the Memoid MCP. Only use the Memoid MCP from outside the repo when native repo access is not the operating context.*
@@ -78,3 +81,8 @@ Each specialized agent maintains a `DIARY.md`. This is for **meta-learning**, no
 5. **Repo-Local Tooling Rule**: If the agent is operating from within the Memoid repository directory, do not use the Memoid MCP. Prefer the native tools available in the repository and local environment.
 6. **Feature Triage**: Engine enhancement ideas that are being researched but **not yet committed** to implementation should be placed in `.feature-triage/`. This folder is excluded from the main wiki, evidence, and LOG entries. Structure: `.feature-triage/<idea-name>/` containing independent analysis, proposed solutions, and supporting research.
 7. **Feature Promotion**: Notes in `.feature-triage/` remain private exploration by default. They may only be promoted into GitHub issues when the user explicitly asks for it. Eligible notes should use the triage template, include a clear status such as `draft`, `ready-for-issue`, or `filed`, and be checked for duplicates before filing. When creating an issue from a triage note, prefer promoting only notes marked `ready-for-issue`, create one intentional issue per note unless the user asks otherwise, and write the resulting GitHub issue number or URL back into the note so future agents can see that it has already been filed.
+8. **Protocol Precision**: Every protocol must define a concrete trigger (`**When:**`), produce reproducible results, and handle edge cases explicitly. Protocols that perform checks must use the structured output format: `OK`, `ERR`, `WRN`, `SKIP` per check, ending with a summary line (`N error(s), N warning(s).`). Do not write protocols that are loose checklists or guidelines.
+9. **No Duplication**: Protocols must not duplicate content from `CONVENTIONS.md`. Page structure, naming rules, fact lifecycle, and linking conventions are canonical there — protocols reference it, they do not redefine it.
+10. **Bounded Output (Engine)**: The MCP server and any future retrieval engine must return bounded excerpts, not full file dumps. Retrieval results must include truncation indicators when content is omitted. Wake-up context must be compact — strip verbose file-path headers and redundant markup.
+11. **Scoped Lint on Writes**: Any MCP tool or engine function that modifies memory files (`memory/wiki/`, `memory/evidence/`) must run scoped lint on the affected artifacts and include the result in its response. A write without lint feedback is incomplete.
+12. **Optimization Gate**: When adding a new protocol or modifying `scripts/mcp_server.py`, verify compliance with rules 8–11. If a change would reintroduce full file dumps, loose protocol language, or duplicated conventions, reject it or flag it for revision.

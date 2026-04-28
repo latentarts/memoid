@@ -1,5 +1,7 @@
 # Init
 
+**When:** After cloning the repo, on first run, or when the local environment needs to be rebuilt.
+
 ## Goal
 
 Prepare the repository for first use so the local environment and bundled workflows are ready.

@@ -1,5 +1,7 @@
 # Compaction
 
+**When:** Context is running low and a handoff is needed before the session ends.
+
 ## Goal
 
 Preserve continuity before context is lost.

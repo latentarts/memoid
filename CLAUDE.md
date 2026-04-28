@@ -13,6 +13,12 @@ You must complete this sequence before answering any user query or performing an
 ## 1. Primary Source of Truth
 **Read `AGENTS.md`** for the core system architecture, wake-up protocols, and agent roles.
 
+## 2. Key Protocols
+- **Structure & Conventions**: `protocols/CONVENTIONS.md` — page types, naming, fact lifecycle, editing rules
+- **Ingest**: `protocols/INGEST.md` and `protocols/INGEST_CODE.md`
+- **Retrieval**: `protocols/RETRIEVAL.md` and `protocols/SEARCH.md`
+- **Maintenance**: `protocols/LINT.md` and `protocols/FILING.md`
+
 ## 2. Quick Commands
 - **Init**: `uv sync && uv run python scripts/post_init_check.py`
 - **Ingest**: `uv run python skills/download-urls/scripts/download_urls.py <url>`

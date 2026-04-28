@@ -1,5 +1,7 @@
 # Ingest
 
+**When:** Adding a new source (article, document, codebase, transcript, note).
+
 ## Goal
 
 Turn a new source into durable, searchable knowledge.

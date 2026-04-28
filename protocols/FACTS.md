@@ -1,3 +1,5 @@
+> **Note:** This file has been superseded by `protocols/CONVENTIONS.md`, which consolidates fact lifecycle rules and page conventions into a single canonical reference.
+
 # Facts
 
 ## Goal
