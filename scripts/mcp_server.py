@@ -168,7 +168,79 @@ def _render_section(title: str, files: List[Path]) -> str:
     return "\n".join(lines)
 
 
+def _find_relevant_chunks(content: str, query_tokens: List[str], max_chunks: int = 3, context_window: int = 300) -> List[str]:
+    """Extract bounded excerpts around query term matches. Returns deduplicated chunks."""
+    if not query_tokens:
+        lines = content.splitlines()
+        return ["\n".join(lines[:15])] if len(lines) > 15 else [content[:context_window]]
+
+    content_lower = content.lower()
+    chunks: List[str] = []
+    seen_ranges: Set[tuple] = set()
+
+    for token in query_tokens:
+        pos = 0
+        while True:
+            idx = content_lower.find(token, pos)
+            if idx == -1:
+                break
+            start = max(0, idx - context_window // 2)
+            end = min(len(content), idx + context_window // 2)
+            # Expand to nearest newline boundaries
+            while start > 0 and content[start] != '\n':
+                start -= 1
+            while end < len(content) and content[end] != '\n':
+                end += 1
+            chunk_range = (start, end)
+            if chunk_range not in seen_ranges:
+                seen_ranges.add(chunk_range)
+                excerpt = content[start:end].strip()
+                if excerpt:
+                    chunks.append(excerpt)
+                if len(chunks) >= max_chunks:
+                    break
+            pos = idx + len(token)
+        if len(chunks) >= max_chunks:
+            break
+
+    if not chunks:
+        lines = content.splitlines()
+        return ["\n".join(lines[:10])]
+    return chunks
+
+
+def _render_bounded_excerpts(title: str, files: List[Path], query_tokens: Optional[List[str]] = None, max_chunks_per_file: int = 3) -> str:
+    if not files:
+        return ""
+    parts = [f"## {title}"]
+    for file_path in files:
+        content = file_path.read_text(encoding="utf-8")
+        # Extract current section heading context
+        heading_context = ""
+        for line in content.splitlines():
+            if line.startswith("## "):
+                heading_context = line
+        heading_note = f" {heading_context}" if heading_context else ""
+        parts.append(f"--- File: {file_path.relative_to(ROOT)}{heading_note} ---")
+
+        if query_tokens:
+            chunks = _find_relevant_chunks(content, query_tokens, max_chunks_per_file)
+            for idx, chunk in enumerate(chunks):
+                parts.append(f"[Excerpt {idx + 1}]\n{chunk}")
+            total_chars = sum(len(c) for c in chunks)
+            if total_chars < len(content) * 0.8:
+                parts.append(f"[Truncated: {len(content) - total_chars} chars omitted]")
+        else:
+            # No query tokens: return first 500 chars as summary
+            parts.append(content[:500].strip())
+            if len(content) > 500:
+                parts.append(f"[Truncated: {len(content) - 500} chars omitted]")
+        parts.append("")
+    return "\n".join(parts).rstrip()
+
+
 def _render_file_dump(title: str, files: List[Path]) -> str:
+    """Legacy full dump — only for small files or explicit raw source requests."""
     if not files:
         return ""
     parts = [f"## {title}"]
@@ -312,25 +384,20 @@ def memoid_wake_up(query: Optional[str] = None, include_index: bool = True, next
     sections = [
         "# Wake-Up Context",
         _wake_up_summary(identity_text, story_text, next_reads),
-        f"## Required Reads\n- {identity_path.relative_to(ROOT).as_posix()}\n- {story_path.relative_to(ROOT).as_posix()}",
     ]
-    if include_index:
-        sections.append(f"## Optional Reads\n- {INDEX_PATH.relative_to(ROOT).as_posix()}")
-    elif next_reads:
-        sections.append("## Optional Reads\n- Index skipped (`include_index=False`)")
-    if next_reads:
+    if include_index and next_reads and not query:
         sections.append(
             "## Suggested Next Reads\n" + "\n".join(f"- {path.relative_to(ROOT).as_posix()}" for path in next_reads)
         )
 
     detail_sections = [
-        f"## Identity\n--- File: {identity_path.relative_to(ROOT)} ---\n{identity_text}",
-        f"## Essential Story\n--- File: {story_path.relative_to(ROOT)} ---\n{story_text}",
+        f"## Identity\n{identity_text}",
+        f"## Essential Story\n{story_text}",
     ]
     if include_index:
-        detail_sections.append(f"## Index\n--- File: {INDEX_PATH.relative_to(ROOT)} ---\n{index_text}")
+        detail_sections.append(f"## Index\n{index_text}")
     if next_reads:
-        detail_sections.append(_render_file_dump("Suggested Page Content", next_reads))
+        detail_sections.append(_render_bounded_excerpts("Suggested Page Content", next_reads))
 
     return "\n\n".join(sections + detail_sections)
 
@@ -367,8 +434,8 @@ def memoid_recall(query: str, limit: int = 10, allow_raw: bool = False) -> str:
         sections.append("## Raw Sources Used\n- Skipped (`allow_raw=False`)")
 
     detail_sections = [
-        _render_file_dump("Wiki Content", wiki_pages),
-        _render_file_dump("Evidence Content", evidence_pages),
+        _render_bounded_excerpts("Wiki Content", wiki_pages, query_tokens),
+        _render_bounded_excerpts("Evidence Content", evidence_pages, query_tokens),
     ]
     if allow_raw:
         detail_sections.append(_render_file_dump("Raw Content", raw_files))

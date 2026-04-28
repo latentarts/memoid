@@ -1,5 +1,7 @@
 # Ingest Code
 
+**When:** Ingesting a local codebase or solution tree into Memoid.
+
 ## Goal
 
 Turn a local codebase or solution tree into durable, navigable knowledge in Memoid without copying large amounts of source code into the wiki.
@@ -11,7 +13,7 @@ Turn a local codebase or solution tree into durable, navigable knowledge in Memo
 ## Read First
 
 - `protocols/INGEST.md`
-- `protocols/SCHEMA.md`
+- `protocols/CONVENTIONS.md`
 - `protocols/FILING.md`
 
 ## What To Extract

@@ -1,5 +1,7 @@
 # Wake-Up
 
+**When:** Starting a new session or the user asks to "wake up" or orient.
+
 ## Goal
 
 Reconstruct current state from a very small default context.

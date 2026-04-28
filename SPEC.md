@@ -210,13 +210,16 @@ memory/
       IDENTITY.md
       DIARY.md
 protocols/
-  SCHEMA.md
+  CONVENTIONS.md
   WAKE_UP.md
   INGEST.md
+  INGEST_CODE.md
   RETRIEVAL.md
+  SEARCH.md
   FILING.md
   COMPACTION.md
-  FACTS.md
+  LINT.md
+  INIT.md
 ```
 
 ## The Key Hybrid Decision
@@ -445,18 +448,22 @@ This should be mandatory agent behavior, documented in `protocols/COMPACTION.md`
 
 ## 5. Lint / Health Check
 
-This comes directly from the Karpathy pattern and should be retained.
+Lint passes execute structured, pass/fail checks rather than loose inspection.
 
-Periodic lint passes should check for:
+Checks include:
 
-- contradictions between pages
-- stale claims
-- orphan pages
-- missing cross-links
-- unsupported claims
-- high-value topics lacking canonical pages
+- orphan detection (wiki pages not linked from INDEX.md)
+- broken internal links
+- LOG.md format validation
+- placeholder detection in IDENTITY.md / ESSENTIAL_STORY.md
+- unlinked evidence files
+- entity page structure (`Current`, `History`, `Sources`)
+- evidence page backlinks (`Affected Pages`)
+- protocol precision and bounded engine output
 
-Results should be written to `memory/evidence/audits/` and optionally summarized in `memory/wiki/LOG.md`.
+Results use `OK`, `ERR`, `WRN`, `SKIP` per check with a summary line (`N error(s), N warning(s).`).
+
+All `ERR` items must be resolved before filing a session. Results are written to `memory/evidence/audits/`.
 
 ## Skills Required
 
@@ -517,6 +524,24 @@ This hybrid is better than a markdown clone of MemPalace when:
 - you want a git/Obsidian-native workflow
 - you do not want to start with a retrieval/database stack
 
+## Optimization Constraints
+
+These constraints preserve performance and accuracy properties that distinguish Memoid from simpler wiki-only systems. Any protocol or engine change must respect them.
+
+### Protocol Rules
+
+1. Every protocol must define a concrete trigger (`**When:**`). Protocols are executable instructions, not design docs.
+2. Protocols that perform checks must use the structured output format: `OK` / `ERR` / `WRN` / `SKIP` per check, ending with a summary line.
+3. Protocols must not duplicate content from `CONVENTIONS.md`. Page structure, naming rules, fact lifecycle, and linking conventions are canonical there.
+4. Every protocol must handle edge cases explicitly (e.g., "what if the wiki doesn't have the answer?").
+
+### Engine Rules
+
+5. Retrieval must return bounded excerpts (300-char windows around matching terms), not full file dumps. Results must include truncation indicators when content is omitted.
+6. Wake-up context must be compact — strip verbose file-path headers and redundant markup from MCP output.
+7. Any MCP tool that modifies memory files must run scoped lint on affected artifacts and include the result in its response.
+8. Tokenization and scoring must remain simple (token-based presence, not embedding models). Semantic retrieval via plugins is a future opt-in, not a default dependency.
+
 ## Main Risks
 
 ### Risk 1: Summary Drift
@@ -548,26 +573,30 @@ Mitigation:
 
 ## Recommended V1
 
-V1 should include only:
+V1 should include:
 
 - `memory/raw/`
 - `memory/wiki/IDENTITY.md`
 - `memory/wiki/ESSENTIAL_STORY.md`
 - `memory/wiki/INDEX.md`
 - `memory/wiki/LOG.md`
-- a few canonical page directories
+- canonical page directories (`entities`, `concepts`, `domains`)
 - `memory/evidence/sessions/`
 - `memory/evidence/decisions/`
+- `memory/evidence/source-notes/`
+- `memory/evidence/audits/`
 - `memory/agents/<name>/DIARY.md`
-- `protocols/` files for wake-up, retrieval, filing, compaction
+- `protocols/` files: WAKE_UP, CONVENTIONS, INGEST, INGEST_CODE, RETRIEVAL, SEARCH, FILING, COMPACTION, LINT, INIT
+- MCP server with bounded-excerpt recall
+- CLI dispatcher (`memoid`)
 
 V1 should not include:
 
-- embeddings
-- MCP tools
+- embeddings or vector databases
 - automatic graph generation
 - full ontology systems
 - large-scale automation
+- networked semantic search dependencies
 
 ## Acceptance Criteria
 
